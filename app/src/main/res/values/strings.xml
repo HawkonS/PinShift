@@ -1,0 +1,212 @@
+<resources>
+    <string name="app_name">移点</string>
+    <string name="app_settings">设置</string>
+    <string name="app_history">历史记录</string>
+    <string name="app_service_tips">移点正在模拟位置</string>
+    <string name="app_service_initializing">定位服务正在初始化，请稍后再试</string>
+    <string name="app_agreement">用户协议</string>
+    <string name="app_agreement_content">"1. 本软件用于 Android 定位与地图技术的学习、研究和测试。请仅在您有权控制的设备、账号和测试环境中使用。\n\n"
+    "2. 请勿将本软件用于侵犯隐私、欺骗、作弊、规避安全机制或其他违法违规用途。用户应自行确认使用行为符合所在地法律法规、平台规则和第三方服务条款。\n\n"
+    "3. 本软件依据 GNU GPL v3 开源许可证发布。您可以在许可证允许的范围内查看、修改和再发布源代码，但必须履行相应的开源义务并保留原项目和贡献者署名。\n\n"
+    "4. 本软件按现状提供，不承诺适用于任何特定用途。因不当使用、设备兼容性、第三方应用限制或服务变化造成的后果由使用者自行承担。"</string>
+    <string name="app_privacy">隐私政策</string>
+    <string name="app_privacy_content">"1. 本项目维护者未为本软件建设业务服务器，不会主动接收或集中存储您的位置和搜索记录。\n\n"
+    "2. 应用会在设备本地保存您填写的地图开放平台访问凭证、功能设置、搜索记录、位置历史及短期运行日志。清除应用数据或卸载应用可删除本地数据。\n\n"
+    "3. 地图显示、定位、地点搜索和逆地理编码由百度地图 SDK/API 提供。为完成这些功能，您的 Key、设备和网络信息、搜索内容及位置数据可能按照百度地图开放平台的规则发送至百度服务器。请同时阅读百度相关隐私政策与服务条款。\n\n"
+    "4. 地图开放平台访问凭证保存在应用私有配置中，并已禁止 Android 云备份，但在设备已 Root、系统被攻破或安装包被逆向分析时仍无法保证绝对保密。建议为凭证设置正确的包名和 SHA1 限制，并在发现异常时及时重置。\n\n"
+    "5. 定位权限仅用于显示当前位置、选择模拟位置和诊断系统 Provider；悬浮窗权限仅用于显示移动控制摇杆。您可以在系统设置中随时撤回权限。"</string>
+    <string name="app_agreement_privacy">已阅读《用户协议》和《隐私政策》</string>
+    <string name="app_error_agreement">请先勾选同意《用户协议》和《隐私政策》</string>
+    <string name="app_error_read">请依次阅读并接受\n《用户协议》和《隐私政策》</string>
+    <string name="app_error_gps">定位不可用，请检查 GPS 是否开启</string>
+    <string name="app_error_network">网络不可用，请检查网络连接</string>
+    <string name="app_error_permission">权限不足，请授予相关权限</string>
+    <string name="app_error_input">输入有误，请检查输入是否合法</string>
+    <string name="app_error_input_null">输入不能为空，请重新输入内容</string>
+    <string name="app_error_search">查找失败，请检查网络或定位</string>
+    <string name="app_error_map_key_missing">尚未配置地图访问凭证</string>
+    <string name="app_error_map_init">地图服务初始化失败，请检查访问凭证、包名、SHA1 和网络后重试</string>
+    <string name="app_error_location">请先选择位置</string>
+    <string name="app_error_dev">开发者模式未开启，无法跳转！请自行搜索开启方法</string>
+    <string name="app_error_param">非法参数</string>
+    <string name="app_error_protocol">请先阅读并接收用户协议</string>
+    <string name="app_error_username">用户名不合法</string>
+    <string name="app_error_code">注册码不能为空</string>
+    <string name="app_error_longitude">经度超出限制!\n取值：-180.0 ~ 180.0</string>
+    <string name="app_error_latitude">纬度超出限制!\n取值：-90.0 ~ 90.0</string>
+    <string name="app_search_null">没有匹配结果，请重新搜索</string>
+    <string name="app_search_tips">请输入查找内容</string>
+    <string name="app_location_ok">位置已传送</string>
+    <string name="app_location_copy">位置已复制到剪切板</string>
+    <string name="app_location_save">位置已保存</string>
+
+    <!-- 欢迎页 -->
+    <string name="welcome_title">欢迎使用移点</string>
+    <string name="welcome_subtitle">轻量、可控的位置模拟工具</string>
+    <string name="welcome_setup_title">开始前完成设置</string>
+    <string name="welcome_setup_description">首次使用需要配置地图服务并确认协议。完成后，后续启动会自动进入地图。</string>
+    <string name="welcome_btn_txt">开始使用</string>
+    <string name="welcome_consent_text">我已阅读并同意《用户协议》和《隐私政策》</string>
+    <string name="welcome_policy_close">关闭</string>
+    <string name="baidu_service_terms">百度服务条款</string>
+    <string name="baidu_privacy_policy">百度隐私政策</string>
+    <string name="welcome_auto_entry_hint">完成一次设置后，后续启动将自动进入</string>
+    <string name="welcome_learning_notice">仅供学习、研究和测试使用</string>
+    <string name="app_btn_agree">同意并继续</string>
+    <string name="app_btn_disagree">不同意</string>
+
+    <!-- 移动相关参数 -->
+    <string name="setting_group_move">移动</string>
+    <string name="setting_joystick_type">摇杆类型</string>
+    <string name="setting_walk">步行速度(米/秒)</string>
+    <string name="setting_walk_default">1.2</string>
+    <string name="setting_run">跑步速度(米/秒)</string>
+    <string name="setting_run_default">3.6</string>
+    <string name="setting_bike">驾驶速度(米/秒)</string>
+    <string name="setting_bike_default">10.0</string>
+    <string name="setting_altitude">海拔高度(米)</string>
+    <string name="setting_altitude_default">55.0</string>
+
+    <!-- 位置偏移相关参数 -->
+    <string name="setting_group_location_offset">位置偏移</string>
+    <string name="setting_random_offset">随机偏移</string>
+    <string name="setting_random_offset_summary">仅在使用历史位置时生效</string>
+    <string name="setting_random_offset_default">10.0</string>
+    <string name="setting_lat_max_offset">经度最大偏移距离(米)</string>
+    <string name="setting_lon_max_offset">纬度最大偏移距离(米)</string>
+    <!-- 地图搜索相关参数 -->
+    <string name="setting_group_map">地图服务</string>
+    <string name="setting_map_application_info_title">开放平台申请信息</string>
+    <string name="setting_map_application_info_loading">正在读取包名和签名信息…</string>
+    <string name="setting_map_application_info_format">PackageName：%1$s\n开发版SHA1：%2$s\n发布版SHA1：%3$s</string>
+    <string name="setting_map_application_info_usage">申请用途：用于 Android 地图展示、地点检索、定位选择及位置模拟功能测试。</string>
+    <string name="setting_map_application_info_copy">复制全部信息</string>
+    <string name="setting_map_application_info_copied">全部申请信息已复制</string>
+    <string name="setting_map_sha1_unavailable">获取失败</string>
+    <string name="setting_map_sha1_use_debug_build">请在开发版中查看</string>
+    <string name="setting_map_key">地图访问凭证</string>
+    <string name="setting_map_key_dialog">输入地图访问凭证</string>
+    <string name="setting_map_key_input_label">地图访问凭证（AK）</string>
+    <string name="setting_map_key_not_set">未配置，地图搜索暂不可用</string>
+    <string name="setting_map_key_set">已配置，点击可修改</string>
+    <string name="setting_map_key_saved">访问凭证已保存</string>
+    <string name="setting_map_key_hint">粘贴开放平台生成的 AK</string>
+    <string name="setting_map_key_explanation">保存后需要重新初始化地图服务。</string>
+    <string name="setting_map_key_save_only">仅保存</string>
+    <string name="setting_map_key_save_restart">保存并重启</string>
+    <string name="setting_map_key_saved_restart_later">访问凭证已保存，请稍后重启应用使其生效</string>
+    <string name="setting_map_key_save_failed">访问凭证保存失败，请重试</string>
+    <string name="setting_map_key_restart_message">是否现在重启应用，让新的访问凭证立即生效？</string>
+    <string name="setting_map_key_restart_now">立即重启</string>
+    <string name="setting_map_key_restart_later">稍后</string>
+    <string name="welcome_map_key_status_missing">地图服务：未配置</string>
+    <string name="welcome_map_key_status_set">地图服务：已配置</string>
+    <string name="welcome_map_key_button_missing">去设置</string>
+    <string name="welcome_map_key_button_set">修改</string>
+    <!-- 记录相关参数 -->
+    <string name="setting_group_log">记录</string>
+    <string name="setting_log_off">关闭本地运行日志</string>
+    <string name="setting_log_off_summary">重启应用后生效；关闭后不再写入本地日志文件</string>
+    <string name="setting_log_saved">日志设置已保存</string>
+    <string name="setting_log_restart_message">是否现在重启应用，让日志设置立即生效？</string>
+    <string name="setting_history_expiration">历史记录有效期(天)</string>
+    <!-- 历史记录页面 -->
+    <string name="history_expiration">7</string>
+    <string name="history_location_default_name">地图位置</string>
+    <string name="history_idle">暂无历史记录</string>
+    <string name="history_delete_ok">删除成功！</string>
+    <string name="history_delete_error">删除记录失败</string>
+    <string name="history_error_location">定位失败，请手动选取定位点</string>
+    <string name="history_error_search">未搜索到指定内容</string>
+
+    <!-- 通知栏 -->
+    <string name="note_show">显示摇杆</string>
+    <string name="note_hide">隐藏摇杆</string>
+    <!-- 摇杆 -->
+    <string name="joystick_map_tips">搜索或点击地图位置</string>
+    <string name="joystick_history_tips">搜索或点击历史位置</string>
+    <string name="joystick_history">历史记录</string>
+    <string name="joystick_map">地图</string>
+    <string name="joystick_move">移动</string>
+    <string name="joystick_walk">步行</string>
+    <string name="joystick_run">跑步</string>
+    <string name="joystick_bike">自行车</string>
+    <!-- 导航页 -->
+    <string name="nav_drawer_open">打开导航菜单</string>
+    <string name="nav_drawer_close">关闭导航菜单</string>
+    <string name="nav_menu_history">历史记录</string>
+    <string name="nav_menu_settings">应用设置</string>
+    <string name="nav_menu_map_key">地图配置</string>
+    <string name="nav_menu_dev">模拟位置</string>
+    <string name="nav_menu_diagnostic">定位诊断</string>
+    <string name="nav_menu_about">关于</string>
+    <string name="nav_current_version">当前版本</string>
+    <string name="nav_current_version_format">PinShift · 版本 %1$s</string>
+    <string name="nav_check_update">检查更新</string>
+    <string name="nav_code_repository">代码仓库</string>
+    <string name="nav_contact_author">联系我们</string>
+    <string name="nav_header_subtitle">PinShift · 位置模拟工具</string>
+    <string name="nav_section_features">功能</string>
+    <string name="nav_section_system">系统</string>
+    <string name="nav_section_project">项目</string>
+    <string name="nav_header_tagline">选择位置 · 启动模拟 · 随时诊断</string>
+    <string name="nav_app_tips">仅供学习、研究和测试使用</string>
+    <string name="nav_app_notice_title">使用提醒</string>
+    <string name="nav_app_notice_body">仅供学习、研究与测试 · 请遵守法律法规及平台规则</string>
+    <string name="nav_open_link_failed">无法打开链接，请检查是否安装了浏览器</string>
+    <string name="map_key_page_title">地图与搜索</string>
+    <string name="map_key_page_intro">配置地图展示和地点搜索所需的访问凭证。当前服务由百度地图开放平台提供，保存后需重启应用生效。</string>
+    <string name="map_key_status_missing">当前状态：未配置</string>
+    <string name="map_key_status_configured">当前状态：已配置</string>
+    <string name="map_key_show_value">显示凭证内容</string>
+
+    <!-- 定位诊断页面 -->
+    <string name="diagnostic_title">定位诊断</string>
+    <string name="diagnostic_intro">此页面直接监听 Android 系统的 GPS 和 NETWORK Provider，用于判断系统是否收到模拟位置。它不会判断第三方 App 是否主动过滤模拟位置。</string>
+    <string name="diagnostic_refresh">刷新诊断状态</string>
+    <string name="diagnostic_open_mock_settings">打开开发者选项</string>
+    <string name="diagnostic_device_status">设备与权限状态</string>
+    <string name="diagnostic_gps_status">GPS Provider 最近位置</string>
+    <string name="diagnostic_network_status">NETWORK Provider 最近位置</string>
+    <string name="diagnostic_event_log">实时位置事件</string>
+    <string name="diagnostic_clear_log">清空日志</string>
+    <string name="diagnostic_waiting">等待位置数据…</string>
+    <string name="diagnostic_yes">是</string>
+    <string name="diagnostic_no">否</string>
+    <string name="diagnostic_enabled">已开启</string>
+    <string name="diagnostic_disabled">未开启</string>
+    <string name="diagnostic_allowed">已授权</string>
+    <string name="diagnostic_not_allowed">未授权，请在开发者选项中选择本 App</string>
+    <string name="diagnostic_summary_format">Android：%1$s（API %2$d）\n包名：%3$s\n精确位置权限：%4$s\n大致位置权限：%5$s\nGPS Provider：%6$s\nNETWORK Provider：%7$s\n模拟位置权限：%8$s</string>
+    <string name="diagnostic_permission_missing">缺少定位权限，无法读取位置。</string>
+    <string name="diagnostic_no_location">%1$s 暂无最近位置。</string>
+    <string name="diagnostic_read_failed">读取 %1$s 失败：%2$s</string>
+    <string name="diagnostic_location_format">Provider：%1$s\n纬度：%2$.7f\n经度：%3$.7f\n精度：%4$.1f 米\n海拔：%5$.1f 米\n速度：%6$.2f 米/秒\n方向：%7$.1f°\n时间：%8$s\n模拟位置：%9$s</string>
+    <string name="diagnostic_update_received">%1$s → %2$.7f, %3$.7f，Mock=%4$s</string>
+    <string name="diagnostic_listening">开始监听 %1$s</string>
+    <string name="diagnostic_listen_failed">监听 %1$s 失败：%2$s</string>
+    <string name="diagnostic_mock_check_failed">模拟位置权限检查失败：%1$s</string>
+    <string name="diagnostic_provider_enabled">%1$s 已开启</string>
+    <string name="diagnostic_provider_disabled">%1$s 已关闭</string>
+    <string name="diagnostic_provider_status">%1$s 状态变化：%2$d</string>
+    <string name="diagnostic_settings_failed">无法打开开发者选项：%1$s</string>
+
+    <!-- 主界面 -->
+    <string name="label_longitude">经度</string>
+    <string name="label_latitude">纬度</string>
+    <string name="input_position_ok">传送</string>
+    <string name="input_position_cancel">取消</string>
+    <string name="input_position_baidu">BD09 坐标系</string>
+    <string name="input_position_gps">GPS 坐标系</string>
+    <string name="input_button">输入位置</string>
+    <string name="cur_position">返回当前位置</string>
+    <string name="zoom_in">放大</string>
+    <string name="zoom_out">缩小</string>
+
+    <!-- 百度地图 -->
+    <string name="map_pic_sate">卫星图</string>
+    <string name="map_pic_normal">普通图</string>
+
+    <string name="setting_number_invalid">请输入 %1$s 至 %2$s 之间的有限数字。</string>
+    <string name="setting_numbers_repaired">无效的数字设置已恢复为默认值。</string>
+</resources>

@@ -1,0 +1,87 @@
+<resources>
+    <style name="PinShift.NavigationItemText" parent="TextAppearance.AppCompat.Body1">
+        <item name="android:textSize">15sp</item>
+    </style>
+
+    <style name="PinShift.NavigationRow" parent="">
+        <item name="android:layout_width">match_parent</item>
+        <item name="android:layout_height">50dp</item>
+        <item name="android:layout_marginStart">10dp</item>
+        <item name="android:layout_marginEnd">10dp</item>
+        <item name="android:background">@drawable/nav_item_background</item>
+        <item name="android:clickable">true</item>
+        <item name="android:focusable">true</item>
+        <item name="android:gravity">center_vertical</item>
+        <item name="android:orientation">horizontal</item>
+        <item name="android:paddingStart">14dp</item>
+        <item name="android:paddingEnd">14dp</item>
+    </style>
+
+    <style name="PinShift.NavigationRowCompact" parent="PinShift.NavigationRow">
+        <item name="android:layout_height">46dp</item>
+    </style>
+
+    <style name="PinShift.NavigationIcon" parent="">
+        <item name="android:layout_width">22dp</item>
+        <item name="android:layout_height">22dp</item>
+        <item name="android:duplicateParentState">true</item>
+        <item name="tint">@color/nav_item_icon_tint</item>
+    </style>
+
+    <style name="PinShift.NavigationText" parent="TextAppearance.AppCompat.Body1">
+        <item name="android:layout_width">wrap_content</item>
+        <item name="android:layout_height">wrap_content</item>
+        <item name="android:layout_marginStart">16dp</item>
+        <item name="android:duplicateParentState">true</item>
+        <item name="android:textColor">@color/nav_item_text_color</item>
+        <item name="android:textSize">15sp</item>
+    </style>
+
+
+    <!-- 系统主题默认主题. -->
+    <style name="AppTheme" parent="Theme.AppCompat.Light.DarkActionBar">
+        <item name="colorPrimary">@color/colorPrimary</item>
+        <item name="colorPrimaryDark">@color/colorPrimary</item>
+        <item name="colorAccent">@color/colorAccent</item>
+        <item name="buttonStyle">@style/AppTheme.Button</item>
+        <item name="android:statusBarColor">@android:color/transparent</item>
+    </style>
+
+    <!-- 无ActionBar -->
+    <style name="AppTheme.NoActionBar">
+        <item name="windowActionBar">false</item>
+        <item name="windowNoTitle">true</item>
+    </style>
+
+    <style name="AppTheme.Restart" parent="Theme.AppCompat.Light.NoActionBar">
+        <item name="android:windowIsTranslucent">true</item>
+        <item name="android:windowBackground">@android:color/transparent</item>
+        <item name="android:windowNoTitle">true</item>
+        <item name="android:backgroundDimEnabled">false</item>
+    </style>
+
+    <style name="AppTheme.AppBarOverlay" parent="ThemeOverlay.AppCompat.Dark.ActionBar" />
+
+    <style name="AppTheme.PopupOverlay" parent="ThemeOverlay.AppCompat.Light" />
+
+    <!-- 参考 https://blog.csdn.net/qq_37299249/article/details/78536772 -->
+    <style name="RippleWhite"  parent="Theme.AppCompat.Light.DarkActionBar">
+        <!-- 点击后波纹的颜色 -->
+        <item name="android:colorControlHighlight">#C8C9CA</item>
+        <!-- 效果半径-->
+        <item name="android:radius">14dp</item>
+    </style>
+
+    <!-- dialog动画 -->
+    <style name="DialogAnimFadeInFadeOut" parent="android:Animation">
+        <item name="android:windowEnterAnimation">@anim/anim_fade_in</item>
+        <item name="android:windowExitAnimation">@anim/anim_fade_out</item>
+    </style>
+
+    <!-- https://stackoverflow.com/questions/26346727/android-material-design-button-styles-->
+    <!-- Button -->
+    <style name="AppTheme.Button" parent="Widget.AppCompat.Button.Colored">
+        <item name="colorButtonNormal">@color/colorAccent</item>
+    </style>
+
+</resources>

@@ -1,0 +1,96 @@
+name: Build Release
+
+on:
+  workflow_dispatch:
+  push:
+    tags:
+      - 'v*'
+
+permissions:
+  contents: write
+
+jobs:
+  signing-config:
+    name: Check signing configuration
+    runs-on: ubuntu-latest
+    outputs:
+      configured: ${{ steps.check.outputs.configured }}
+    steps:
+      - name: Check release secrets
+        id: check
+        env:
+          SIGNING_KEY: ${{ secrets.SIGNING_KEY }}
+          KEY_STORE_PASSWORD: ${{ secrets.KEY_STORE_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.ALIAS }}
+          KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
+        run: |
+          if [ -n "$SIGNING_KEY" ] && [ -n "$KEY_STORE_PASSWORD" ] && [ -n "$KEY_ALIAS" ] && [ -n "$KEY_PASSWORD" ]; then
+            echo "configured=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "configured=false" >> "$GITHUB_OUTPUT"
+            echo "Release signing secrets are not configured; the signed-build job will be skipped."
+          fi
+
+  release:
+    name: Signed Release APK
+    needs: signing-config
+    if: needs.signing-config.outputs.configured == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+          cache: gradle
+
+      - name: Restore release signing key
+        env:
+          SIGNING_KEY: ${{ secrets.SIGNING_KEY }}
+          KEY_STORE_PASSWORD: ${{ secrets.KEY_STORE_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.ALIAS }}
+          KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
+        run: |
+          test -n "$SIGNING_KEY"
+          test -n "$KEY_STORE_PASSWORD"
+          test -n "$KEY_ALIAS"
+          test -n "$KEY_PASSWORD"
+          printf '%s' "$SIGNING_KEY" | base64 --decode > "$RUNNER_TEMP/pinshift-release.jks"
+          {
+            printf 'storeFile=%s\n' "$RUNNER_TEMP/pinshift-release.jks"
+            printf 'storePassword=%s\n' "$KEY_STORE_PASSWORD"
+            printf 'keyAlias=%s\n' "$KEY_ALIAS"
+            printf 'keyPassword=%s\n' "$KEY_PASSWORD"
+          } > keystore.properties
+          chmod 600 "$RUNNER_TEMP/pinshift-release.jks" keystore.properties
+
+      - name: Test, lint and build signed APK
+        run: bash ./gradlew --no-daemon --no-configuration-cache clean testDebugUnitTest lintDebug assembleRelease
+
+      - name: Locate and verify APK
+        id: apk
+        run: |
+          APK_PATH=$(find app/build/outputs/apk/release -maxdepth 1 -type f -name '*-release.apk' -print -quit)
+          test -n "$APK_PATH"
+          APKSIGNER=$(find "$ANDROID_HOME/build-tools" -type f -name apksigner -print | sort -V | tail -n 1)
+          test -x "$APKSIGNER"
+          "$APKSIGNER" verify --verbose --print-certs "$APK_PATH"
+          echo "path=$APK_PATH" >> "$GITHUB_OUTPUT"
+          echo "name=$(basename "$APK_PATH")" >> "$GITHUB_OUTPUT"
+
+      - name: Upload APK artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ steps.apk.outputs.name }}
+          path: ${{ steps.apk.outputs.path }}
+          if-no-files-found: error
+
+      - name: Publish GitHub Release
+        if: startsWith(github.ref, 'refs/tags/')
+        uses: softprops/action-gh-release@v2.3.2
+        with:
+          generate_release_notes: true
+          prerelease: false
+          files: ${{ steps.apk.outputs.path }}
