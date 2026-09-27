@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    tools:showIn="navigation_view">
+
+    <group android:id="@+id/nav_group_main">
+        <item
+            android:id="@+id/nav_history"
+            android:checkable="false"
+            android:icon="@drawable/ic_menu_history"
+            android:title="@string/nav_menu_history" />
+        <item
+            android:id="@+id/nav_map_key"
+            android:checkable="false"
+            android:icon="@drawable/ic_key"
+            android:title="@string/nav_menu_map_key" />
+        <item
+            android:id="@+id/nav_diagnostic"
+            android:checkable="false"
+            android:icon="@drawable/ic_msg"
+            android:title="@string/nav_menu_diagnostic" />
+        <item
+            android:id="@+id/nav_settings"
+            android:checkable="false"
+            android:icon="@drawable/ic_menu_settings"
+            android:title="@string/nav_menu_settings" />
+        <item
+            android:id="@+id/nav_dev"
+            android:checkable="false"
+            android:icon="@drawable/ic_menu_dev"
+            android:title="@string/nav_menu_dev" />
+    </group>
+
+    <group android:id="@+id/nav_group_project">
+        <item
+            android:id="@+id/nav_update"
+            android:checkable="false"
+            android:icon="@drawable/ic_menu_update"
+            android:title="@string/nav_check_update" />
+        <item
+            android:id="@+id/nav_repository"
+            android:checkable="false"
+            android:icon="@drawable/ic_menu_repository"
+            android:title="@string/nav_code_repository" />
+        <item
+            android:id="@+id/nav_contact"
+            android:checkable="false"
+            android:icon="@drawable/ic_menu_contact"
+            android:title="@string/nav_contact_author" />
+    </group>
+
+</menu>

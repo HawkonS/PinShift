@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="128" height="128" viewBox="0 0 128 128" fill="none" role="img" aria-labelledby="title desc">
+  <title id="title">定位模拟器</title>
+  <desc id="desc">蓝色圆角图标，白色定位图钉搭配模拟移动虚线与落点圆环。</desc>
+  <rect width="128" height="128" rx="26" fill="#1f8dd6"/>
+  <g transform="translate(64 64) scale(.78) translate(-64 -64)">
+    <ellipse cx="70" cy="96" rx="22" ry="8" stroke="#FFF" stroke-opacity=".55" stroke-width="3"/>
+    <path d="M29 91C21 83 26 74 36 74H43" stroke="#FFF" stroke-width="3.5" stroke-linecap="round" stroke-dasharray="3 7"/>
+    <circle cx="32" cy="96" r="4" fill="#FFF"/>
+    <path d="M70 23C55.64 23 44 34.64 44 49C44 68 70 91 70 91S96 68 96 49C96 34.64 84.36 23 70 23Z" fill="#FFF"/>
+    <circle cx="70" cy="49" r="10" fill="#1f8dd6"/>
+  </g>
+</svg>
