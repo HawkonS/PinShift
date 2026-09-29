@@ -164,6 +164,7 @@ public class MainActivity extends BaseActivity implements SensorEventListener {
     private String pendingHistoryLongitude;
     private String pendingHistoryLatitude;
     private MenuItem searchItem;
+    private boolean isSearchItemExpanded;
     private SuggestionSearch mSuggestionSearch;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -370,12 +371,14 @@ public class MainActivity extends BaseActivity implements SensorEventListener {
         searchItem.setOnActionExpandListener(new  MenuItem.OnActionExpandListener() {
             @Override
             public boolean onMenuItemActionCollapse(MenuItem item) {
+                isSearchItemExpanded = false;
                 mSearchLayout.setVisibility(View.INVISIBLE);
                 mHistoryLayout.setVisibility(View.INVISIBLE);
                 return true;  // Return true to collapse action view
             }
             @Override
             public boolean onMenuItemActionExpand(MenuItem item) {
+                isSearchItemExpanded = true;
                 mSearchLayout.setVisibility(View.INVISIBLE);
                 //展示搜索历史
                 refreshSearchHistory();
@@ -423,7 +426,11 @@ public class MainActivity extends BaseActivity implements SensorEventListener {
             public boolean onQueryTextChange(String newText) {
                 if (newText == null || newText.trim().isEmpty()) {
                     mSearchLayout.setVisibility(View.INVISIBLE);
-                    refreshSearchHistory();
+                    if (isSearchItemExpanded) {
+                        refreshSearchHistory();
+                    } else {
+                        mHistoryLayout.setVisibility(View.INVISIBLE);
+                    }
                     return true;
                 }
 
@@ -1219,6 +1226,7 @@ public class MainActivity extends BaseActivity implements SensorEventListener {
             DataBaseHistorySearch.saveHistorySearch(mSearchHistoryDB, contentValues);
             mSearchLayout.setVisibility(View.INVISIBLE);
             searchItem.collapseActionView();
+            mHistoryLayout.setVisibility(View.INVISIBLE);
         });
         //搜索历史列表的点击监听
         mSearchHistoryList = findViewById(R.id.search_history_list_view);
