@@ -258,10 +258,16 @@ public class ServiceGo extends Service {
 
     private void removeTestProviderGPS() {
         try {
-            if (mLocManager.isProviderEnabled(LocationManager.GPS_PROVIDER)) {
-                mLocManager.setTestProviderEnabled(LocationManager.GPS_PROVIDER, false);
-                mLocManager.removeTestProvider(LocationManager.GPS_PROVIDER);
-            }
+            mLocManager.setTestProviderEnabled(LocationManager.GPS_PROVIDER, false);
+        } catch (IllegalArgumentException ignored) {
+            // The provider may already be absent after an interrupted shutdown.
+        } catch (Exception e) {
+            XLog.e("SERVICEGO: ERROR - disableTestProviderGPS");
+        }
+        try {
+            mLocManager.removeTestProvider(LocationManager.GPS_PROVIDER);
+        } catch (IllegalArgumentException ignored) {
+            // Removing an absent provider means cleanup is already complete.
         } catch (Exception e) {
             XLog.e("SERVICEGO: ERROR - removeTestProviderGPS");
         }
@@ -313,10 +319,16 @@ public class ServiceGo extends Service {
 
     private void removeTestProviderNetwork() {
         try {
-            if (mLocManager.isProviderEnabled(LocationManager.NETWORK_PROVIDER)) {
-                mLocManager.setTestProviderEnabled(LocationManager.NETWORK_PROVIDER, false);
-                mLocManager.removeTestProvider(LocationManager.NETWORK_PROVIDER);
-            }
+            mLocManager.setTestProviderEnabled(LocationManager.NETWORK_PROVIDER, false);
+        } catch (IllegalArgumentException ignored) {
+            // The provider may already be absent after an interrupted shutdown.
+        } catch (Exception e) {
+            XLog.e("SERVICEGO: ERROR - disableTestProviderNetwork");
+        }
+        try {
+            mLocManager.removeTestProvider(LocationManager.NETWORK_PROVIDER);
+        } catch (IllegalArgumentException ignored) {
+            // Removing an absent provider means cleanup is already complete.
         } catch (Exception e) {
             XLog.e("SERVICEGO: ERROR - removeTestProviderNetwork");
         }
