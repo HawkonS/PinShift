@@ -39,6 +39,7 @@ import tech.hawkon.pinshift.HistoryActivity;
 import tech.hawkon.pinshift.MainActivity;
 import tech.hawkon.pinshift.R;
 import tech.hawkon.pinshift.utils.GoUtils;
+import tech.hawkon.pinshift.utils.NumericSettings;
 import tech.hawkon.pinshift.utils.MapUtils;
 
 import java.math.BigDecimal;
@@ -267,11 +268,7 @@ public class JoyStick extends View {
             }
         });
         // 获取参数区设置的速度
-        try {
-            mSpeed = Double.parseDouble(sharedPreferences.getString("setting_walk", getResources().getString(R.string.setting_walk_default)));
-        } catch (NumberFormatException e) {  // GOOD: The exception is caught.
-            mSpeed = 1.2;
-        }
+        mSpeed = NumericSettings.getDouble(sharedPreferences, NumericSettings.Setting.WALK_SPEED);
         mJoystickLayout = inflater.inflate(R.layout.joystick, null);
 
         /* 整个摇杆拖动事件处理 */
@@ -305,11 +302,7 @@ public class JoyStick extends View {
                 isRun = false;
                 btnBike.setColorFilter(getResources().getColor(R.color.black, mContext.getTheme()));
                 isBike = false;
-                try {
-                    mSpeed = Double.parseDouble(sharedPreferences.getString("setting_walk", getResources().getString(R.string.setting_walk_default)));
-                } catch (NumberFormatException e) {  // GOOD: The exception is caught.
-                    mSpeed = 1.2;
-                }
+                mSpeed = NumericSettings.getDouble(sharedPreferences, NumericSettings.Setting.WALK_SPEED);
             }
         });
         /* 默认为步行 */
@@ -326,11 +319,7 @@ public class JoyStick extends View {
                 isWalk = false;
                 btnBike.setColorFilter(getResources().getColor(R.color.black, mContext.getTheme()));
                 isBike = false;
-                try {
-                    mSpeed = Double.parseDouble(sharedPreferences.getString("setting_run", getResources().getString(R.string.setting_run_default)));
-                } catch (NumberFormatException e) {  // GOOD: The exception is caught.
-                    mSpeed = 3.6;
-                }
+                mSpeed = NumericSettings.getDouble(sharedPreferences, NumericSettings.Setting.RUN_SPEED);
             }
         });
         /* 自行车按键的点击处理 */
@@ -344,11 +333,7 @@ public class JoyStick extends View {
                 isWalk = false;
                 btnRun.setColorFilter(getResources().getColor(R.color.black, mContext.getTheme()));
                 isRun = false;
-                try {
-                    mSpeed = Double.parseDouble(sharedPreferences.getString("setting_bike", getResources().getString(R.string.setting_bike_default)));
-                } catch (NumberFormatException e) {  // GOOD: The exception is caught.
-                    mSpeed = 10.0;
-                }
+                mSpeed = NumericSettings.getDouble(sharedPreferences, NumericSettings.Setting.BIKE_SPEED);
             }
         });
         /* 方向键点击处理 */

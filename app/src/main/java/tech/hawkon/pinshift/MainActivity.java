@@ -87,6 +87,7 @@ import tech.hawkon.pinshift.database.DataBaseHistoryLocation;
 import tech.hawkon.pinshift.database.DataBaseHistorySearch;
 import tech.hawkon.pinshift.utils.ShareUtils;
 import tech.hawkon.pinshift.utils.GoUtils;
+import tech.hawkon.pinshift.utils.NumericSettings;
 import tech.hawkon.pinshift.utils.MapUtils;
 
 import com.elvishew.xlog.XLog;
@@ -901,7 +902,7 @@ public class MainActivity extends BaseActivity implements SensorEventListener {
         double[] latLng = MapUtils.bd2wgs(mMarkLatLngMap.longitude, mMarkLatLngMap.latitude);
         serviceGoIntent.putExtra(LNG_MSG_ID, latLng[0]);
         serviceGoIntent.putExtra(LAT_MSG_ID, latLng[1]);
-        double alt = Double.parseDouble(sharedPreferences.getString("setting_altitude", "55.0"));
+        double alt = NumericSettings.getDouble(sharedPreferences, NumericSettings.Setting.ALTITUDE);
         serviceGoIntent.putExtra(ALT_MSG_ID, alt);
 
         try {
@@ -971,7 +972,7 @@ public class MainActivity extends BaseActivity implements SensorEventListener {
                     return;
                 }
                 double[] latLng = MapUtils.bd2wgs(mMarkLatLngMap.longitude, mMarkLatLngMap.latitude);
-                double alt = Double.parseDouble(sharedPreferences.getString("setting_altitude", "55.0"));
+                double alt = NumericSettings.getDouble(sharedPreferences, NumericSettings.Setting.ALTITUDE);
                 if (!mServiceBinder.setPosition(latLng[0], latLng[1], alt)) {
                     GoUtils.DisplayToast(this, getString(R.string.app_service_initializing));
                     return;

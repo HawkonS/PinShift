@@ -36,6 +36,7 @@ import java.util.Map;
 
 import tech.hawkon.pinshift.database.DataBaseHistoryLocation;
 import tech.hawkon.pinshift.utils.GoUtils;
+import tech.hawkon.pinshift.utils.NumericSettings;
 
 public class HistoryActivity extends BaseActivity {
     public static final String RESULT_LOCATION_NAME = "RESULT_LOCATION_NAME";
@@ -218,12 +219,8 @@ public class HistoryActivity extends BaseActivity {
     }
 
     private void recordArchive() {
-        double limits;
-        try {
-            limits = Double.parseDouble(sharedPreferences.getString("setting_history_expiration", getResources().getString(R.string.history_expiration)));
-        } catch (NumberFormatException e) {  // GOOD: The exception is caught.
-            limits = 7;
-        }
+        double limits = NumericSettings.getDouble(
+                sharedPreferences, NumericSettings.Setting.HISTORY_EXPIRATION);
         final long weekSecond = (long) (limits * 24 * 60 * 60);
 
         try {
@@ -342,9 +339,10 @@ public class HistoryActivity extends BaseActivity {
     }
 
     private String[] randomOffset(String longitude, String latitude) {
-        String max_offset_default = getResources().getString(R.string.setting_random_offset_default);
-        double lon_max_offset = Double.parseDouble(Objects.requireNonNull(sharedPreferences.getString("setting_lon_max_offset", max_offset_default)));
-        double lat_max_offset = Double.parseDouble(Objects.requireNonNull(sharedPreferences.getString("setting_lat_max_offset", max_offset_default)));
+        double lon_max_offset = NumericSettings.getDouble(
+                sharedPreferences, NumericSettings.Setting.LONGITUDE_OFFSET);
+        double lat_max_offset = NumericSettings.getDouble(
+                sharedPreferences, NumericSettings.Setting.LATITUDE_OFFSET);
         double lon = Double.parseDouble(longitude);
         double lat = Double.parseDouble(latitude);
 

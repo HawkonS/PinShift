@@ -10,9 +10,11 @@ import androidx.preference.EditTextPreference;
 import androidx.preference.ListPreference;
 import androidx.preference.Preference;
 import androidx.preference.PreferenceFragmentCompat;
+import androidx.preference.PreferenceManager;
 import androidx.preference.SwitchPreferenceCompat;
 
 import tech.hawkon.pinshift.utils.GoUtils;
+import tech.hawkon.pinshift.utils.NumericSettings;
 
 import java.util.Objects;
 
@@ -31,17 +33,23 @@ public class FragmentSettings extends PreferenceFragmentCompat {
                 .show();
     }
 
-    // Set a non-empty decimal EditTextPreference
-    private void setupDecimalEditTextPreference(EditTextPreference preference) {
+    // Validate numeric settings before persistence.
+    private void setupDecimalEditTextPreference(EditTextPreference preference,
+                                                NumericSettings.Setting setting) {
         if (preference != null) {
             preference.setSummaryProvider((Preference.SummaryProvider<EditTextPreference>) EditTextPreference::getText);
             preference.setOnBindEditTextListener(editText -> {
-                editText.setInputType(InputType.TYPE_NUMBER_FLAG_DECIMAL | InputType.TYPE_CLASS_NUMBER);
+                int inputType = InputType.TYPE_NUMBER_FLAG_DECIMAL | InputType.TYPE_CLASS_NUMBER;
+                if (setting.minimum < 0) {
+                    inputType |= InputType.TYPE_NUMBER_FLAG_SIGNED;
+                }
+                editText.setInputType(inputType);
                 editText.setSelection(editText.length());
             });
             preference.setOnPreferenceChangeListener((pref, newValue) -> {
-                if (newValue.toString().trim().isEmpty()) {
-                    GoUtils.DisplayToast(this.getContext(), getResources().getString(R.string.app_error_input_null));
+                if (!NumericSettings.isValid(newValue, setting)) {
+                    GoUtils.DisplayToast(requireContext(), getString(R.string.setting_number_invalid,
+                            String.valueOf(setting.minimum), String.valueOf(setting.maximum)));
                     return false;
                 }
                 return true;
@@ -51,8 +59,13 @@ public class FragmentSettings extends PreferenceFragmentCompat {
 
     @Override
     public void onCreatePreferences(Bundle savedInstanceState, String rootKey) {
-        // Load the preferences from an XML resource
+        // Repair legacy numeric values before EditTextPreference reads persisted strings.
+        boolean repaired = NumericSettings.repairInvalidValues(
+                PreferenceManager.getDefaultSharedPreferences(requireContext()));
         addPreferencesFromResource(R.xml.preferences_main);
+        if (repaired) {
+            GoUtils.DisplayToast(requireContext(), getString(R.string.setting_numbers_repaired));
+        }
 
         ListPreference pfJoystick = findPreference("setting_joystick_type");
         if (pfJoystick != null) {
@@ -62,22 +75,22 @@ public class FragmentSettings extends PreferenceFragmentCompat {
         }
 
         EditTextPreference pfWalk = findPreference("setting_walk");
-        setupDecimalEditTextPreference(pfWalk);
+        setupDecimalEditTextPreference(pfWalk, NumericSettings.Setting.WALK_SPEED);
 
         EditTextPreference pfRun = findPreference("setting_run");
-        setupDecimalEditTextPreference(pfRun);
+        setupDecimalEditTextPreference(pfRun, NumericSettings.Setting.RUN_SPEED);
 
         EditTextPreference pfBike = findPreference("setting_bike");
-        setupDecimalEditTextPreference(pfBike);
+        setupDecimalEditTextPreference(pfBike, NumericSettings.Setting.BIKE_SPEED);
 
         EditTextPreference pfAltitude = findPreference("setting_altitude");
-        setupDecimalEditTextPreference(pfAltitude);
+        setupDecimalEditTextPreference(pfAltitude, NumericSettings.Setting.ALTITUDE);
 
         EditTextPreference pfLatOffset = findPreference("setting_lat_max_offset");
-        setupDecimalEditTextPreference(pfLatOffset);
+        setupDecimalEditTextPreference(pfLatOffset, NumericSettings.Setting.LATITUDE_OFFSET);
 
         EditTextPreference pfLonOffset = findPreference("setting_lon_max_offset");
-        setupDecimalEditTextPreference(pfLonOffset);
+        setupDecimalEditTextPreference(pfLonOffset, NumericSettings.Setting.LONGITUDE_OFFSET);
 
         SwitchPreferenceCompat pLog = findPreference("setting_log_off");
         if (pLog != null) {
@@ -96,7 +109,7 @@ public class FragmentSettings extends PreferenceFragmentCompat {
         }
 
         EditTextPreference pfPosHisValid = findPreference("setting_history_expiration");
-        setupDecimalEditTextPreference(pfPosHisValid);
+        setupDecimalEditTextPreference(pfPosHisValid, NumericSettings.Setting.HISTORY_EXPIRATION);
 
     }
 }
