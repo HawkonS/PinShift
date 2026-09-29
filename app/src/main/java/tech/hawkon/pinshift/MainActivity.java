@@ -141,9 +141,14 @@ public class MainActivity extends BaseActivity implements SensorEventListener {
     private float mCurrentDirection = 0.0f;
     private boolean isFirstLoc = true; // 是否首次定位
     private boolean isMockServStart = false;
+    private boolean isMockServStarting = false;
     private ServiceGo.ServiceGoBinder mServiceBinder;
     private ServiceConnection mConnection;
     private boolean isServiceBound;
+    private double pendingStartLongitude;
+    private double pendingStartLatitude;
+    private String pendingStartName;
+    private boolean hasPendingStart;
     private FloatingActionButton mButtonStart;
     /*============================== 历史记录 相关 ==============================*/
     private SQLiteDatabase mLocationHistoryDB;
@@ -201,12 +206,34 @@ public class MainActivity extends BaseActivity implements SensorEventListener {
             public void onServiceConnected(ComponentName name, IBinder service) {
                 mServiceBinder = (ServiceGo.ServiceGoBinder)service;
                 isServiceBound = true;
+                if (mServiceBinder.isReady()) {
+                    isMockServStart = true;
+                    isMockServStarting = false;
+                    mButtonStart.setImageResource(R.drawable.ic_fly);
+                    if (hasPendingStart) {
+                        mMarkName = pendingStartName;
+                        recordCurrentLocation(pendingStartLongitude, pendingStartLatitude);
+                        if (mBaiduMap != null) {
+                            mBaiduMap.clear();
+                        }
+                        mMarkLatLngMap = null;
+                        hasPendingStart = false;
+                    }
+                } else {
+                    stopGoLocation();
+                    GoUtils.DisplayToast(MainActivity.this, getString(R.string.app_service_initializing));
+                }
             }
 
             @Override
             public void onServiceDisconnected(ComponentName name) {
                 mServiceBinder = null;
                 isServiceBound = false;
+                isMockServStart = false;
+                isMockServStarting = false;
+                if (mButtonStart != null) {
+                    mButtonStart.setImageResource(R.drawable.ic_position);
+                }
             }
         };
 
@@ -351,28 +378,7 @@ public class MainActivity extends BaseActivity implements SensorEventListener {
             public boolean onMenuItemActionExpand(MenuItem item) {
                 mSearchLayout.setVisibility(View.INVISIBLE);
                 //展示搜索历史
-                List<Map<String, Object>> data = getSearchHistory();
-
-                if (!data.isEmpty()) {
-                    SimpleAdapter simAdapt = new SimpleAdapter(
-                            MainActivity.this,
-                            data,
-                            R.layout.search_item,
-                            new String[] {DataBaseHistorySearch.DB_COLUMN_KEY,
-                                    DataBaseHistorySearch.DB_COLUMN_DESCRIPTION,
-                                    DataBaseHistorySearch.DB_COLUMN_TIMESTAMP,
-                                    DataBaseHistorySearch.DB_COLUMN_IS_LOCATION,
-                                    DataBaseHistorySearch.DB_COLUMN_LONGITUDE_CUSTOM,
-                                    DataBaseHistorySearch.DB_COLUMN_LATITUDE_CUSTOM},
-                            new int[] {R.id.search_key,
-                                    R.id.search_description,
-                                    R.id.search_timestamp,
-                                    R.id.search_isLoc,
-                                    R.id.search_longitude,
-                                    R.id.search_latitude});
-                    mSearchHistoryList.setAdapter(simAdapt);
-                    mHistoryLayout.setVisibility(View.VISIBLE);
-                }
+                refreshSearchHistory();
 
                 return true;  // Return true to expand action view
             }
@@ -387,6 +393,10 @@ public class MainActivity extends BaseActivity implements SensorEventListener {
             @Override
             public boolean onQueryTextSubmit(String query) {
                 try {
+                    if (query == null || query.trim().isEmpty()) {
+                        return true;
+                    }
+                    query = query.trim();
                     mSuggestionSearch.requestSuggestion((new SuggestionSearchOption())
                             .keyword(query)
                             .city(mCurrentCity)
@@ -411,14 +421,18 @@ public class MainActivity extends BaseActivity implements SensorEventListener {
 
             @Override
             public boolean onQueryTextChange(String newText) {
-                //当输入框内容改变的时候回调
-                //搜索历史置为不可见
-                mHistoryLayout.setVisibility(View.INVISIBLE);
+                if (newText == null || newText.trim().isEmpty()) {
+                    mSearchLayout.setVisibility(View.INVISIBLE);
+                    refreshSearchHistory();
+                    return true;
+                }
 
-                if (newText != null && !newText.isEmpty()) {
+                // 输入关键词后显示搜索建议，隐藏历史记录。
+                mHistoryLayout.setVisibility(View.INVISIBLE);
+                if (!newText.trim().isEmpty()) {
                     try {
                         mSuggestionSearch.requestSuggestion((new SuggestionSearchOption())
-                                .keyword(newText)
+                                .keyword(newText.trim())
                                 .city(mCurrentCity)
                         );
                     } catch (Exception e) {
@@ -438,7 +452,7 @@ public class MainActivity extends BaseActivity implements SensorEventListener {
             et.setText("");
             searchView.setQuery("", false);
             mSearchLayout.setVisibility(View.INVISIBLE);
-            mHistoryLayout.setVisibility(View.VISIBLE);
+            refreshSearchHistory();
         });
 
         return true;
@@ -871,18 +885,35 @@ public class MainActivity extends BaseActivity implements SensorEventListener {
     }
 
     private void startGoLocation() {
+        pendingStartLongitude = mMarkLatLngMap.longitude;
+        pendingStartLatitude = mMarkLatLngMap.latitude;
+        pendingStartName = mMarkName;
+        hasPendingStart = true;
         Intent serviceGoIntent = new Intent(MainActivity.this, ServiceGo.class);
-        bindService(serviceGoIntent, mConnection, BIND_AUTO_CREATE);    // 绑定服务和活动，之后活动就可以去调服务的方法了
+        isMockServStarting = true;
         double[] latLng = MapUtils.bd2wgs(mMarkLatLngMap.longitude, mMarkLatLngMap.latitude);
         serviceGoIntent.putExtra(LNG_MSG_ID, latLng[0]);
         serviceGoIntent.putExtra(LAT_MSG_ID, latLng[1]);
         double alt = Double.parseDouble(sharedPreferences.getString("setting_altitude", "55.0"));
         serviceGoIntent.putExtra(ALT_MSG_ID, alt);
 
-        startForegroundService(serviceGoIntent);
+        try {
+            startForegroundService(serviceGoIntent);
+        } catch (RuntimeException e) {
+            isMockServStarting = false;
+            hasPendingStart = false;
+            XLog.e("startForegroundService failed: " + e.getClass().getSimpleName());
+            GoUtils.DisplayToast(this, getString(R.string.app_service_initializing));
+            return;
+        }
+        if (!bindService(serviceGoIntent, mConnection, BIND_AUTO_CREATE)) {
+            isMockServStarting = false;
+            hasPendingStart = false;
+            stopService(serviceGoIntent);
+            GoUtils.DisplayToast(this, getString(R.string.app_service_initializing));
+            return;
+        }
         XLog.d("startForegroundService: ServiceGo");
-
-        isMockServStart = true;
     }
 
     private void stopGoLocation() {
@@ -894,6 +925,8 @@ public class MainActivity extends BaseActivity implements SensorEventListener {
         Intent serviceGoIntent = new Intent(MainActivity.this, ServiceGo.class);
         stopService(serviceGoIntent);
         isMockServStart = false;
+        isMockServStarting = false;
+        hasPendingStart = false;
     }
 
     private void doGoLocation(View v) {
@@ -908,6 +941,10 @@ public class MainActivity extends BaseActivity implements SensorEventListener {
             return;
         }
 
+        if (isMockServStarting) {
+            GoUtils.DisplayToast(this, getString(R.string.app_service_initializing));
+            return;
+        }
         if (isMockServStart) {
             if (mMarkLatLngMap == null) {
                 stopGoLocation();
@@ -921,7 +958,10 @@ public class MainActivity extends BaseActivity implements SensorEventListener {
                 }
                 double[] latLng = MapUtils.bd2wgs(mMarkLatLngMap.longitude, mMarkLatLngMap.latitude);
                 double alt = Double.parseDouble(sharedPreferences.getString("setting_altitude", "55.0"));
-                mServiceBinder.setPosition(latLng[0], latLng[1], alt);
+                if (!mServiceBinder.setPosition(latLng[0], latLng[1], alt)) {
+                    GoUtils.DisplayToast(this, getString(R.string.app_service_initializing));
+                    return;
+                }
                 Snackbar.make(v, "已传送到新位置", Snackbar.LENGTH_LONG)
                         .setAction("Action", null).show();
 
@@ -944,13 +984,10 @@ public class MainActivity extends BaseActivity implements SensorEventListener {
                             .setAction("Action", null).show();
                 } else {
                     startGoLocation();
-                    mButtonStart.setImageResource(R.drawable.ic_fly);
-                    Snackbar.make(v, "模拟位置已启动", Snackbar.LENGTH_LONG)
-                            .setAction("Action", null).show();
-
-                    recordCurrentLocation(mMarkLatLngMap.longitude, mMarkLatLngMap.latitude);
-                    mBaiduMap.clear();
-                    mMarkLatLngMap = null;
+                    if (isMockServStarting) {
+                        Snackbar.make(v, getString(R.string.app_service_initializing), Snackbar.LENGTH_LONG)
+                                .setAction("Action", null).show();
+                    }
 
                     if (GoUtils.isWifiEnabled(MainActivity.this)) {
                         GoUtils.showDisableWifiDialog(MainActivity.this);
@@ -970,7 +1007,7 @@ public class MainActivity extends BaseActivity implements SensorEventListener {
             DataBaseHistorySearch dbHistory = new DataBaseHistorySearch(getApplicationContext());
             mSearchHistoryDB = dbHistory.getWritableDatabase();
         } catch (Exception e) {
-            XLog.e("ERROR: sqlite init error");
+            XLog.e("ERROR: sqlite init error: " + e.getClass().getSimpleName());
         }
     }
 
@@ -978,27 +1015,95 @@ public class MainActivity extends BaseActivity implements SensorEventListener {
     private List<Map<String, Object>> getSearchHistory() {
         List<Map<String, Object>> data = new ArrayList<>();
 
-        try {
-            Cursor cursor = mSearchHistoryDB.query(DataBaseHistorySearch.TABLE_NAME, null,
+        if (mSearchHistoryDB == null || !mSearchHistoryDB.isOpen()) {
+            XLog.e("ERROR: search history database is unavailable");
+            return data;
+        }
+
+        String[] projection = new String[] {
+                DataBaseHistorySearch.DB_COLUMN_KEY,
+                DataBaseHistorySearch.DB_COLUMN_DESCRIPTION,
+                DataBaseHistorySearch.DB_COLUMN_TIMESTAMP,
+                DataBaseHistorySearch.DB_COLUMN_IS_LOCATION,
+                DataBaseHistorySearch.DB_COLUMN_LONGITUDE_CUSTOM,
+                DataBaseHistorySearch.DB_COLUMN_LATITUDE_CUSTOM
+        };
+
+        try (Cursor cursor = mSearchHistoryDB.query(DataBaseHistorySearch.TABLE_NAME, projection,
                     DataBaseHistorySearch.DB_COLUMN_ID + " > ?", new String[] {"0"},
-                    null, null, DataBaseHistorySearch.DB_COLUMN_TIMESTAMP + " DESC", null);
+                    null, null, DataBaseHistorySearch.DB_COLUMN_TIMESTAMP + " DESC, "
+                            + DataBaseHistorySearch.DB_COLUMN_ID + " DESC", null)) {
+
+            int keyIndex = cursor.getColumnIndexOrThrow(DataBaseHistorySearch.DB_COLUMN_KEY);
+            int descriptionIndex = cursor.getColumnIndexOrThrow(DataBaseHistorySearch.DB_COLUMN_DESCRIPTION);
+            int timestampIndex = cursor.getColumnIndexOrThrow(DataBaseHistorySearch.DB_COLUMN_TIMESTAMP);
+            int isLocationIndex = cursor.getColumnIndexOrThrow(DataBaseHistorySearch.DB_COLUMN_IS_LOCATION);
+            int longitudeIndex = cursor.getColumnIndexOrThrow(DataBaseHistorySearch.DB_COLUMN_LONGITUDE_CUSTOM);
+            int latitudeIndex = cursor.getColumnIndexOrThrow(DataBaseHistorySearch.DB_COLUMN_LATITUDE_CUSTOM);
 
             while (cursor.moveToNext()) {
                 Map<String, Object> searchHistoryItem = new HashMap<>();
-                searchHistoryItem.put(DataBaseHistorySearch.DB_COLUMN_KEY, cursor.getString(1));
-                searchHistoryItem.put(DataBaseHistorySearch.DB_COLUMN_DESCRIPTION, cursor.getString(2));
-                searchHistoryItem.put(DataBaseHistorySearch.DB_COLUMN_TIMESTAMP, "" + cursor.getInt(3));
-                searchHistoryItem.put(DataBaseHistorySearch.DB_COLUMN_IS_LOCATION, "" + cursor.getInt(4));
-                searchHistoryItem.put(DataBaseHistorySearch.DB_COLUMN_LONGITUDE_CUSTOM, cursor.getString(7));
-                searchHistoryItem.put(DataBaseHistorySearch.DB_COLUMN_LATITUDE_CUSTOM, cursor.getString(8));
+                searchHistoryItem.put(DataBaseHistorySearch.DB_COLUMN_KEY, cursor.getString(keyIndex));
+                searchHistoryItem.put(DataBaseHistorySearch.DB_COLUMN_DESCRIPTION,
+                        cursor.isNull(descriptionIndex) ? "" : cursor.getString(descriptionIndex));
+                searchHistoryItem.put(DataBaseHistorySearch.DB_COLUMN_TIMESTAMP,
+                        String.valueOf(cursor.getLong(timestampIndex)));
+                searchHistoryItem.put(DataBaseHistorySearch.DB_COLUMN_IS_LOCATION,
+                        String.valueOf(cursor.getInt(isLocationIndex)));
+                searchHistoryItem.put(DataBaseHistorySearch.DB_COLUMN_LONGITUDE_CUSTOM,
+                        cursor.isNull(longitudeIndex) ? "" : cursor.getString(longitudeIndex));
+                searchHistoryItem.put(DataBaseHistorySearch.DB_COLUMN_LATITUDE_CUSTOM,
+                        cursor.isNull(latitudeIndex) ? "" : cursor.getString(latitudeIndex));
                 data.add(searchHistoryItem);
             }
-            cursor.close();
         } catch (Exception e) {
-            XLog.e("ERROR: getSearchHistory");
+            XLog.e("ERROR: getSearchHistory: " + e.getClass().getSimpleName());
         }
 
         return data;
+    }
+
+    private void refreshSearchHistory() {
+        if (mSearchHistoryList == null || mHistoryLayout == null) {
+            return;
+        }
+
+        List<Map<String, Object>> data = getSearchHistory();
+        SimpleAdapter adapter = new SimpleAdapter(
+                MainActivity.this,
+                data,
+                R.layout.search_item,
+                new String[] {DataBaseHistorySearch.DB_COLUMN_KEY,
+                        DataBaseHistorySearch.DB_COLUMN_DESCRIPTION,
+                        DataBaseHistorySearch.DB_COLUMN_TIMESTAMP,
+                        DataBaseHistorySearch.DB_COLUMN_IS_LOCATION,
+                        DataBaseHistorySearch.DB_COLUMN_LONGITUDE_CUSTOM,
+                        DataBaseHistorySearch.DB_COLUMN_LATITUDE_CUSTOM},
+                new int[] {R.id.search_key,
+                        R.id.search_description,
+                        R.id.search_timestamp,
+                        R.id.search_isLoc,
+                        R.id.search_longitude,
+                        R.id.search_latitude});
+        mSearchHistoryList.setAdapter(adapter);
+        mHistoryLayout.setVisibility(data.isEmpty() ? View.INVISIBLE : View.VISIBLE);
+    }
+
+    private static String historyValue(Map<String, Object> item, String key) {
+        Object value = item == null ? null : item.get(key);
+        return value == null ? "" : String.valueOf(value).trim();
+    }
+
+    private static Double parseHistoryCoordinate(String value) {
+        if (value == null || value.trim().isEmpty()) {
+            return null;
+        }
+        try {
+            double coordinate = Double.parseDouble(value.trim());
+            return Double.isNaN(coordinate) || Double.isInfinite(coordinate) ? null : coordinate;
+        } catch (NumberFormatException e) {
+            return null;
+        }
     }
 
     // 记录请求的位置信息
@@ -1111,16 +1216,31 @@ public class MainActivity extends BaseActivity implements SensorEventListener {
         //搜索历史列表的点击监听
         mSearchHistoryList = findViewById(R.id.search_history_list_view);
         mSearchHistoryList.setOnItemClickListener((parent, view, position, id) -> {
-            String searchDescription = ((TextView) view.findViewById(R.id.search_description)).getText().toString();
-            String searchKey = ((TextView) view.findViewById(R.id.search_key)).getText().toString();
-            String searchIsLoc = ((TextView) view.findViewById(R.id.search_isLoc)).getText().toString();
+            Object item = parent.getItemAtPosition(position);
+            if (!(item instanceof Map)) {
+                XLog.e("ERROR: invalid search history item");
+                return;
+            }
+            @SuppressWarnings("unchecked")
+            Map<String, Object> historyItem = (Map<String, Object>) item;
+            String searchDescription = historyValue(historyItem, DataBaseHistorySearch.DB_COLUMN_DESCRIPTION);
+            String searchKey = historyValue(historyItem, DataBaseHistorySearch.DB_COLUMN_KEY);
+            String searchIsLoc = historyValue(historyItem, DataBaseHistorySearch.DB_COLUMN_IS_LOCATION);
 
             //如果是定位搜索
-            if (searchIsLoc.equals("1")) {
-                String lng = ((TextView) view.findViewById(R.id.search_longitude)).getText().toString();
-                String lat = ((TextView) view.findViewById(R.id.search_latitude)).getText().toString();
-                // mMarkName = ((TextView) view.findViewById(R.id.poi_name)).getText().toString();
-                mMarkLatLngMap = new LatLng(Double.parseDouble(lat), Double.parseDouble(lng));
+            if (String.valueOf(DataBaseHistorySearch.DB_SEARCH_TYPE_RESULT).equals(searchIsLoc)) {
+                String lng = historyValue(historyItem, DataBaseHistorySearch.DB_COLUMN_LONGITUDE_CUSTOM);
+                String lat = historyValue(historyItem, DataBaseHistorySearch.DB_COLUMN_LATITUDE_CUSTOM);
+                Double longitude = parseHistoryCoordinate(lng);
+                Double latitude = parseHistoryCoordinate(lat);
+                if (longitude == null || latitude == null || longitude < -180 || longitude > 180
+                        || latitude < -90 || latitude > 90) {
+                    GoUtils.DisplayToast(this, getResources().getString(R.string.app_error_param));
+                    XLog.e("ERROR: invalid search history coordinates");
+                    return;
+                }
+                mMarkName = searchKey;
+                mMarkLatLngMap = new LatLng(latitude, longitude);
                 MapStatusUpdate mapstatusupdate = MapStatusUpdateFactory.newLatLng(mMarkLatLngMap);
                 mBaiduMap.setMapStatus(mapstatusupdate);
 
@@ -1143,8 +1263,11 @@ public class MainActivity extends BaseActivity implements SensorEventListener {
                 contentValues.put(DataBaseHistorySearch.DB_COLUMN_TIMESTAMP, System.currentTimeMillis() / 1000);
 
                 DataBaseHistorySearch.saveHistorySearch(mSearchHistoryDB, contentValues);
-            } else if (searchIsLoc.equals("0")) { //如果仅仅是搜索
+            } else if (String.valueOf(DataBaseHistorySearch.DB_SEARCH_TYPE_KEY).equals(searchIsLoc)) { //如果仅仅是搜索
                 try {
+                    if (searchView == null) {
+                        return;
+                    }
                     searchView.setQuery(searchKey, true);
                 } catch (Exception e) {
                     GoUtils.DisplayToast(this, getResources().getString(R.string.app_error_search));
@@ -1159,31 +1282,19 @@ public class MainActivity extends BaseActivity implements SensorEventListener {
                     .setTitle("警告")//这里是表头的内容
                     .setMessage("确定要删除该项搜索记录吗?")//这里是中间显示的具体信息
                     .setPositiveButton("确定",(dialog, which) -> {
-                        String searchKey = ((TextView) view.findViewById(R.id.search_key)).getText().toString();
+                        Object item = parent.getItemAtPosition(position);
+                        String searchKey = item instanceof Map
+                                ? historyValue((Map<String, Object>) item, DataBaseHistorySearch.DB_COLUMN_KEY)
+                                : "";
 
                         try {
-                            mSearchHistoryDB.delete(DataBaseHistorySearch.TABLE_NAME, DataBaseHistorySearch.DB_COLUMN_KEY + " = ?", new String[] {searchKey});
-                            //删除成功
-                            //展示搜索历史
-                            List<Map<String, Object>> data = getSearchHistory();
-
-                            if (!data.isEmpty()) {
-                                SimpleAdapter simAdapt = new SimpleAdapter(
-                                        MainActivity.this,
-                                        data,
-                                        R.layout.search_item,
-                                        new String[] {DataBaseHistorySearch.DB_COLUMN_KEY,
-                                                DataBaseHistorySearch.DB_COLUMN_DESCRIPTION,
-                                                DataBaseHistorySearch.DB_COLUMN_TIMESTAMP,
-                                                DataBaseHistorySearch.DB_COLUMN_IS_LOCATION,
-                                                DataBaseHistorySearch.DB_COLUMN_LONGITUDE_CUSTOM,
-                                                DataBaseHistorySearch.DB_COLUMN_LATITUDE_CUSTOM}, // 与下面数组元素要一一对应
-                                        new int[] {R.id.search_key, R.id.search_description, R.id.search_timestamp, R.id.search_isLoc, R.id.search_longitude, R.id.search_latitude});
-                                mSearchHistoryList.setAdapter(simAdapt);
-                                mHistoryLayout.setVisibility(View.VISIBLE);
+                            if (mSearchHistoryDB == null || !mSearchHistoryDB.isOpen() || searchKey.isEmpty()) {
+                                throw new IllegalStateException("search history database is unavailable");
                             }
+                            mSearchHistoryDB.delete(DataBaseHistorySearch.TABLE_NAME, DataBaseHistorySearch.DB_COLUMN_KEY + " = ?", new String[] {searchKey});
+                            refreshSearchHistory();
                         } catch (Exception e) {
-                            XLog.e("ERROR: delete database error");
+                            XLog.e("ERROR: delete database error: " + e.getClass().getSimpleName());
                             GoUtils.DisplayToast(MainActivity.this,getResources().getString(R.string.history_delete_error));
                         }
                     })

@@ -20,6 +20,7 @@ import android.os.Bundle;
 import android.os.Handler;
 import android.os.HandlerThread;
 import android.os.IBinder;
+import android.os.Looper;
 import android.os.Message;
 import android.os.Process;
 import android.os.SystemClock;
@@ -48,7 +49,12 @@ public class ServiceGo extends Service {
     private LocationManager mLocManager;
     private HandlerThread mLocHandlerThread;
     private Handler mLocHandler;
-    private boolean isStop = false;
+    private volatile boolean isStop = false;
+    private volatile boolean mReady = false;
+    private boolean mHasPosition = false;
+    private boolean mGpsProviderReady = false;
+    private boolean mNetworkProviderReady = false;
+    private final Handler mMainHandler = new Handler(Looper.getMainLooper());
     // 通知栏消息
     private static final int SERVICE_GO_NOTE_ID = 1;
     private static final String SERVICE_GO_NOTE_ACTION_JOYSTICK_SHOW =
@@ -78,28 +84,31 @@ public class ServiceGo extends Service {
         mLocManager = (LocationManager) this.getSystemService(Context.LOCATION_SERVICE);
 
         removeTestProviderNetwork();
-        addTestProviderNetwork();
+        mNetworkProviderReady = addTestProviderNetwork();
 
         removeTestProviderGPS();
-        addTestProviderGPS();
+        mGpsProviderReady = addTestProviderGPS();
 
         initGoLocation();
 
         initNotification();
 
         initJoyStick();
+        mReady = mGpsProviderReady || mNetworkProviderReady;
+        if (!mReady) {
+            XLog.e("SERVICEGO: no location provider is available");
+        }
     }
 
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
-        if (intent == null) {
+        if (intent == null || !mReady || mLocHandler == null) {
             return START_NOT_STICKY;
         }
-        mCurLng = intent.getDoubleExtra(MainActivity.LNG_MSG_ID, DEFAULT_LNG);
-        mCurLat = intent.getDoubleExtra(MainActivity.LAT_MSG_ID, DEFAULT_LAT);
-        mCurAlt = intent.getDoubleExtra(MainActivity.ALT_MSG_ID, DEFAULT_ALT);
-
-        mJoyStick.setCurrentPosition(mCurLng, mCurLat, mCurAlt);
+        final double lng = intent.getDoubleExtra(MainActivity.LNG_MSG_ID, DEFAULT_LNG);
+        final double lat = intent.getDoubleExtra(MainActivity.LAT_MSG_ID, DEFAULT_LAT);
+        final double alt = intent.getDoubleExtra(MainActivity.ALT_MSG_ID, DEFAULT_ALT);
+        updatePosition(lng, lat, alt);
 
         return START_NOT_STICKY;
     }
@@ -117,6 +126,9 @@ public class ServiceGo extends Service {
         if (mJoyStick != null) {
             mJoyStick.destroy();
         }
+
+        mReady = false;
+        mMainHandler.removeCallbacksAndMessages(null);
 
         removeTestProviderNetwork();
         removeTestProviderGPS();
@@ -174,21 +186,24 @@ public class ServiceGo extends Service {
         mJoyStick.setListener(new JoyStick.JoyStickClickListener() {
             @Override
             public void onMoveInfo(double speed, double disLng, double disLat, double angle) {
-                mSpeed = speed;
-                // 根据当前的经纬度和距离，计算下一个经纬度
-                // Latitude: 1 deg = 110.574 km // 纬度的每度的距离大约为 110.574km
-                // Longitude: 1 deg = 111.320*cos(latitude) km  // 经度的每度的距离从0km到111km不等
-                // 具体见：http://wp.mlab.tw/?p=2200
-                mCurLng += disLng / (111.320 * Math.cos(Math.abs(mCurLat) * Math.PI / 180));
-                mCurLat += disLat / 110.574;
-                mCurBea = (float) angle;
+                postToLocationThread(() -> {
+                    if (!mHasPosition) {
+                        return;
+                    }
+                    mSpeed = speed;
+                    // 根据当前的经纬度和距离，计算下一个经纬度
+                    // Latitude: 1 deg = 110.574 km // 纬度的每度的距离大约为 110.574km
+                    // Longitude: 1 deg = 111.320*cos(latitude) km  // 经度的每度的距离从0km到111km不等
+                    // 具体见：http://wp.mlab.tw/?p=2200
+                    mCurLng += disLng / (111.320 * Math.cos(Math.abs(mCurLat) * Math.PI / 180));
+                    mCurLat += disLat / 110.574;
+                    mCurBea = (float) angle;
+                });
             }
 
             @Override
             public void onPositionInfo(double lng, double lat, double alt) {
-                mCurLng = lng;
-                mCurLat = lat;
-                mCurAlt = alt;
+                updatePosition(lng, lat, alt);
             }
         });
         mJoyStick.show();
@@ -204,15 +219,41 @@ public class ServiceGo extends Service {
             // 这里的Handler对象可以看作是绑定在HandlerThread子线程中，所以handlerMessage里的操作是在子线程中运行的
             @Override
             public void handleMessage(@NonNull Message msg) {
-                if (!isStop) {
-                    setLocationNetwork();
-                    setLocationGPS();
+                if (!isStop && mHasPosition) {
+                    if (mNetworkProviderReady) {
+                        setLocationNetwork();
+                    }
+                    if (mGpsProviderReady) {
+                        setLocationGPS();
+                    }
                     sendEmptyMessageDelayed(HANDLER_MSG_ID, 100L);
                 }
             }
         };
+    }
 
-        mLocHandler.sendEmptyMessage(HANDLER_MSG_ID);
+    private void postToLocationThread(Runnable action) {
+        if (mLocHandler != null && !isStop) {
+            mLocHandler.post(action);
+        }
+    }
+
+    private void updatePosition(double lng, double lat, double alt) {
+        postToLocationThread(() -> {
+            mCurLng = lng;
+            mCurLat = lat;
+            mCurAlt = alt;
+            mHasPosition = true;
+            mLocHandler.removeMessages(HANDLER_MSG_ID);
+            mLocHandler.sendEmptyMessage(HANDLER_MSG_ID);
+            if (mJoyStick != null) {
+                mMainHandler.post(() -> {
+                    if (!isStop && mJoyStick != null) {
+                        mJoyStick.setCurrentPosition(lng, lat, alt);
+                    }
+                });
+            }
+        });
     }
 
     private void removeTestProviderGPS() {
@@ -228,7 +269,7 @@ public class ServiceGo extends Service {
 
     // 注意下面临时添加 @SuppressLint("wrongconstant") 以处理 addTestProvider 参数值的 lint 错误
     @SuppressLint("wrongconstant")
-    private void addTestProviderGPS() {
+    private boolean addTestProviderGPS() {
         try {
             // 注意，由于 android api 问题，下面的参数会提示错误(以下参数是通过相关API获取的真实GPS参数，不是随便写的)
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
@@ -241,8 +282,10 @@ public class ServiceGo extends Service {
             if (!mLocManager.isProviderEnabled(LocationManager.GPS_PROVIDER)) {
                 mLocManager.setTestProviderEnabled(LocationManager.GPS_PROVIDER, true);
             }
+            return true;
         } catch (Exception e) {
-            XLog.e("SERVICEGO: ERROR - addTestProviderGPS");
+            XLog.e("SERVICEGO: ERROR - addTestProviderGPS: " + e.getClass().getSimpleName());
+            return false;
         }
     }
 
@@ -281,7 +324,7 @@ public class ServiceGo extends Service {
 
     // 注意下面临时添加 @SuppressLint("wrongconstant") 以处理 addTestProvider 参数值的 lint 错误
     @SuppressLint("wrongconstant")
-    private void addTestProviderNetwork() {
+    private boolean addTestProviderNetwork() {
         try {
             // 注意，由于 android api 问题，下面的参数会提示错误(以下参数是通过相关API获取的真实NETWORK参数，不是随便写的)
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
@@ -296,8 +339,13 @@ public class ServiceGo extends Service {
             if (!mLocManager.isProviderEnabled(LocationManager.NETWORK_PROVIDER)) {
                 mLocManager.setTestProviderEnabled(LocationManager.NETWORK_PROVIDER, true);
             }
+            return true;
         } catch (SecurityException e) {
-            XLog.e("SERVICEGO: ERROR - addTestProviderNetwork");
+            XLog.e("SERVICEGO: ERROR - addTestProviderNetwork: " + e.getClass().getSimpleName());
+            return false;
+        } catch (Exception e) {
+            XLog.e("SERVICEGO: ERROR - addTestProviderNetwork: " + e.getClass().getSimpleName());
+            return false;
         }
     }
 
@@ -337,16 +385,16 @@ public class ServiceGo extends Service {
     }
 
     public class ServiceGoBinder extends Binder {
-        public void setPosition(double lng, double lat, double alt) {
-            if (mLocHandler == null || mJoyStick == null) {
-                return;
+        public boolean isReady() {
+            return mReady && !isStop && mLocHandler != null;
+        }
+
+        public boolean setPosition(double lng, double lat, double alt) {
+            if (!isReady()) {
+                return false;
             }
-            mLocHandler.removeMessages(HANDLER_MSG_ID);
-            mCurLng = lng;
-            mCurLat = lat;
-            mCurAlt = alt;
-            mLocHandler.sendEmptyMessage(HANDLER_MSG_ID);
-            mJoyStick.setCurrentPosition(mCurLng, mCurLat, mCurAlt);
+            updatePosition(lng, lat, alt);
+            return true;
         }
     }
 }

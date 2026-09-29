@@ -83,7 +83,9 @@ public class HistoryActivity extends BaseActivity {
 
     @Override
     protected void onDestroy() {
-        mHistoryLocationDB.close();
+        if (mHistoryLocationDB != null && mHistoryLocationDB.isOpen()) {
+            mHistoryLocationDB.close();
+        }
         super.onDestroy();
     }
 
@@ -127,7 +129,7 @@ public class HistoryActivity extends BaseActivity {
             DataBaseHistoryLocation hisLocDBHelper = new DataBaseHistoryLocation(getApplicationContext());
             mHistoryLocationDB = hisLocDBHelper.getWritableDatabase();
         } catch (Exception e) {
-            Log.e("HistoryActivity", "ERROR - initLocationDataBase");
+            Log.e("HistoryActivity", "ERROR - initLocationDataBase", e);
         }
 
         recordArchive();
@@ -137,42 +139,82 @@ public class HistoryActivity extends BaseActivity {
     private List<Map<String, Object>> fetchAllRecord() {
         List<Map<String, Object>> data = new ArrayList<>();
 
-        try {
-            Cursor cursor = mHistoryLocationDB.query(DataBaseHistoryLocation.TABLE_NAME, null,
+        if (mHistoryLocationDB == null || !mHistoryLocationDB.isOpen()) {
+            Log.e("HistoryActivity", "ERROR - history database is unavailable");
+            return data;
+        }
+
+        String[] projection = new String[] {
+                DataBaseHistoryLocation.DB_COLUMN_ID,
+                DataBaseHistoryLocation.DB_COLUMN_LOCATION,
+                DataBaseHistoryLocation.DB_COLUMN_LONGITUDE_WGS84,
+                DataBaseHistoryLocation.DB_COLUMN_LATITUDE_WGS84,
+                DataBaseHistoryLocation.DB_COLUMN_TIMESTAMP,
+                DataBaseHistoryLocation.DB_COLUMN_LONGITUDE_CUSTOM,
+                DataBaseHistoryLocation.DB_COLUMN_LATITUDE_CUSTOM
+        };
+
+        try (Cursor cursor = mHistoryLocationDB.query(DataBaseHistoryLocation.TABLE_NAME, projection,
                     DataBaseHistoryLocation.DB_COLUMN_ID + " > ?", new String[] {"0"},
-                    null, null, DataBaseHistoryLocation.DB_COLUMN_TIMESTAMP + " DESC", null);
+                    null, null, DataBaseHistoryLocation.DB_COLUMN_TIMESTAMP + " DESC, "
+                            + DataBaseHistoryLocation.DB_COLUMN_ID + " DESC", null)) {
+
+            int idIndex = cursor.getColumnIndexOrThrow(DataBaseHistoryLocation.DB_COLUMN_ID);
+            int locationIndex = cursor.getColumnIndexOrThrow(DataBaseHistoryLocation.DB_COLUMN_LOCATION);
+            int longitudeIndex = cursor.getColumnIndexOrThrow(DataBaseHistoryLocation.DB_COLUMN_LONGITUDE_WGS84);
+            int latitudeIndex = cursor.getColumnIndexOrThrow(DataBaseHistoryLocation.DB_COLUMN_LATITUDE_WGS84);
+            int timestampIndex = cursor.getColumnIndexOrThrow(DataBaseHistoryLocation.DB_COLUMN_TIMESTAMP);
+            int customLongitudeIndex = cursor.getColumnIndexOrThrow(DataBaseHistoryLocation.DB_COLUMN_LONGITUDE_CUSTOM);
+            int customLatitudeIndex = cursor.getColumnIndexOrThrow(DataBaseHistoryLocation.DB_COLUMN_LATITUDE_CUSTOM);
 
             while (cursor.moveToNext()) {
-                Map<String, Object> item = new HashMap<>();
-                int ID = cursor.getInt(0);
-                String Location = cursor.getString(1);
-                String Longitude = cursor.getString(2);
-                String Latitude = cursor.getString(3);
-                long TimeStamp = cursor.getInt(4);
-                String BD09Longitude = cursor.getString(5);
-                String BD09Latitude = cursor.getString(6);
-                BigDecimal bigDecimalLongitude = BigDecimal.valueOf(Double.parseDouble(Longitude));
-                BigDecimal bigDecimalLatitude = BigDecimal.valueOf(Double.parseDouble(Latitude));
-                BigDecimal bigDecimalBDLongitude = BigDecimal.valueOf(Double.parseDouble(BD09Longitude));
-                BigDecimal bigDecimalBDLatitude = BigDecimal.valueOf(Double.parseDouble(BD09Latitude));
-                double doubleLongitude = bigDecimalLongitude.setScale(11, RoundingMode.HALF_UP).doubleValue();
-                double doubleLatitude = bigDecimalLatitude.setScale(11, RoundingMode.HALF_UP).doubleValue();
-                double doubleBDLongitude = bigDecimalBDLongitude.setScale(11, RoundingMode.HALF_UP).doubleValue();
-                double doubleBDLatitude = bigDecimalBDLatitude.setScale(11, RoundingMode.HALF_UP).doubleValue();
-                item.put(KEY_ID, Integer.toString(ID));
-                item.put(KEY_LOCATION, Location);
-                item.put(KEY_TIME, GoUtils.timeStamp2Date(Long.toString(TimeStamp)));
-                item.put(KEY_LNG_LAT_WGS, "[经度:" + doubleLongitude + " 纬度:" + doubleLatitude + "]");
-                item.put(KEY_LNG_LAT_CUSTOM, "[经度:" + doubleBDLongitude + " 纬度:" + doubleBDLatitude + "]");
-                data.add(item);
+                try {
+                    Map<String, Object> item = new HashMap<>();
+                    item.put(KEY_ID, String.valueOf(cursor.getLong(idIndex)));
+                    item.put(KEY_LOCATION, cursor.isNull(locationIndex) ? "" : cursor.getString(locationIndex));
+                    String timestamp = cursor.isNull(timestampIndex)
+                            ? "" : String.valueOf(cursor.getLong(timestampIndex));
+                    item.put(KEY_TIME, safeFormatTimestamp(timestamp));
+                    String longitude = cursor.isNull(longitudeIndex) ? "" : cursor.getString(longitudeIndex);
+                    String latitude = cursor.isNull(latitudeIndex) ? "" : cursor.getString(latitudeIndex);
+                    String customLongitude = cursor.isNull(customLongitudeIndex)
+                            ? "" : cursor.getString(customLongitudeIndex);
+                    String customLatitude = cursor.isNull(customLatitudeIndex)
+                            ? "" : cursor.getString(customLatitudeIndex);
+                    item.put(KEY_LNG_LAT_WGS, "[经度:" + formatCoordinate(longitude)
+                            + " 纬度:" + formatCoordinate(latitude) + "]");
+                    item.put(KEY_LNG_LAT_CUSTOM, "[经度:" + formatCoordinate(customLongitude)
+                            + " 纬度:" + formatCoordinate(customLatitude) + "]");
+                    data.add(item);
+                } catch (Exception e) {
+                    Log.w("HistoryActivity", "Skipping malformed history row", e);
+                }
             }
-            cursor.close();
         } catch (Exception e) {
-            data.clear();
-            Log.e("HistoryActivity", "ERROR - fetchAllRecord");
+            Log.e("HistoryActivity", "ERROR - fetchAllRecord", e);
         }
 
         return data;
+    }
+
+    private static String formatCoordinate(String value) {
+        if (value == null || value.trim().isEmpty()) {
+            return "";
+        }
+        try {
+            return BigDecimal.valueOf(Double.parseDouble(value.trim()))
+                    .setScale(11, RoundingMode.HALF_UP).toPlainString();
+        } catch (NumberFormatException e) {
+            return value;
+        }
+    }
+
+    private static String safeFormatTimestamp(String timestamp) {
+        try {
+            return GoUtils.timeStamp2Date(timestamp);
+        } catch (RuntimeException e) {
+            return timestamp == null ? "" : timestamp;
+        }
     }
 
     private void recordArchive() {
@@ -235,7 +277,8 @@ public class HistoryActivity extends BaseActivity {
                 } else {
                     List<Map<String, Object>> searchRet = new ArrayList<>();
                     for (int i = 0; i < mAllRecord.size(); i++){
-                        if (mAllRecord.get(i).toString().indexOf(newText) > 0){
+                        if (mAllRecord.get(i).toString().toLowerCase(Locale.ROOT)
+                                .contains(newText.toLowerCase(Locale.ROOT))){
                             searchRet.add(mAllRecord.get(i));
                         }
                     }
