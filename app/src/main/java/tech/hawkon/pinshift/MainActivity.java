@@ -145,6 +145,7 @@ public class MainActivity extends BaseActivity implements SensorEventListener {
     private ServiceGo.ServiceGoBinder mServiceBinder;
     private ServiceConnection mConnection;
     private boolean isServiceBound;
+    private boolean isServiceBindRequested;
     private double pendingStartLongitude;
     private double pendingStartLatitude;
     private String pendingStartName;
@@ -204,6 +205,9 @@ public class MainActivity extends BaseActivity implements SensorEventListener {
         mConnection = new ServiceConnection() {
             @Override
             public void onServiceConnected(ComponentName name, IBinder service) {
+                if (!isServiceBindRequested) {
+                    return;
+                }
                 mServiceBinder = (ServiceGo.ServiceGoBinder)service;
                 isServiceBound = true;
                 if (mServiceBinder.isReady()) {
@@ -229,6 +233,7 @@ public class MainActivity extends BaseActivity implements SensorEventListener {
             public void onServiceDisconnected(ComponentName name) {
                 mServiceBinder = null;
                 isServiceBound = false;
+                isServiceBindRequested = false;
                 isMockServStart = false;
                 isMockServStarting = false;
                 if (mButtonStart != null) {
@@ -312,13 +317,8 @@ public class MainActivity extends BaseActivity implements SensorEventListener {
     protected void onDestroy() {
         XLog.i("MainActivity: onDestroy");
 
-        if (isServiceBound) {
-            unbindService(mConnection);
-            isServiceBound = false;
-        }
-        if (isMockServStart) {
-            Intent serviceGoIntent = new Intent(MainActivity.this, ServiceGo.class);
-            stopService(serviceGoIntent);
+        if (isServiceBound || isServiceBindRequested || isMockServStarting || isMockServStart) {
+            stopGoLocation();
         }
         if (mSensorManager != null) {
             mSensorManager.unregisterListener(this);
@@ -906,7 +906,9 @@ public class MainActivity extends BaseActivity implements SensorEventListener {
             GoUtils.DisplayToast(this, getString(R.string.app_service_initializing));
             return;
         }
+        isServiceBindRequested = true;
         if (!bindService(serviceGoIntent, mConnection, BIND_AUTO_CREATE)) {
+            isServiceBindRequested = false;
             isMockServStarting = false;
             hasPendingStart = false;
             stopService(serviceGoIntent);
@@ -918,9 +920,14 @@ public class MainActivity extends BaseActivity implements SensorEventListener {
 
     private void stopGoLocation() {
         if (isServiceBound) {
-            unbindService(mConnection);
+            try {
+                unbindService(mConnection);
+            } catch (IllegalArgumentException e) {
+                XLog.w("unbindService failed: " + e.getClass().getSimpleName());
+            }
             isServiceBound = false;
         }
+        isServiceBindRequested = false;
         mServiceBinder = null;
         Intent serviceGoIntent = new Intent(MainActivity.this, ServiceGo.class);
         stopService(serviceGoIntent);
