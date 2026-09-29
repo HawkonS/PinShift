@@ -23,7 +23,7 @@ public class DataBaseHistorySearch extends SQLiteOpenHelper {
     // 搜索结果
     public static final int DB_SEARCH_TYPE_RESULT = 1;
 
-    private static final int DB_VERSION = 2;
+    private static final int DB_VERSION = 1;
     private static final String DB_NAME = "HistorySearch.db";
     private static final String CREATE_TABLE = "create table if not exists " + TABLE_NAME +
             " (DB_COLUMN_ID INTEGER PRIMARY KEY AUTOINCREMENT, DB_COLUMN_KEY TEXT NOT NULL, " +
@@ -42,18 +42,13 @@ public class DataBaseHistorySearch extends SQLiteOpenHelper {
     
     @Override
     public void onUpgrade(SQLiteDatabase sqLiteDatabase, int oldVersion, int newVersion) {
-        // Keep existing search history when upgrading the database.
+        String sql = "DROP TABLE IF EXISTS " + TABLE_NAME;
+        sqLiteDatabase.execSQL(sql);
         onCreate(sqLiteDatabase);
     }
 
     public static void saveHistorySearch(SQLiteDatabase sqLiteDatabase, ContentValues contentValues) {
         try {
-            if (sqLiteDatabase == null || !sqLiteDatabase.isOpen() || contentValues == null
-                    || !contentValues.containsKey(DB_COLUMN_KEY)
-                    || contentValues.get(DB_COLUMN_KEY) == null) {
-                XLog.e("DATABASE: insert skipped because database or key is unavailable");
-                return;
-            }
             // 先删除原来的记录，再插入新记录
             String searchKey = contentValues.get(DataBaseHistorySearch.DB_COLUMN_KEY).toString();
             sqLiteDatabase.delete(DataBaseHistorySearch.TABLE_NAME, DataBaseHistorySearch.DB_COLUMN_KEY + " = ?", new String[] {searchKey});
