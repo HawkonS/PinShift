@@ -1124,6 +1124,9 @@ public class MainActivity extends BaseActivity implements SensorEventListener {
     // 记录请求的位置信息
     private void recordCurrentLocation(double lng, double lat) {
         //参数坐标系：bd09
+        // Keep the name paired with this request. The callback can run after another
+        // location has been selected and mMarkName has changed in the meantime.
+        final String requestMarkName = mMarkName;
         final String savedKey = sharedPreferences.getString(PinShiftApplication.PREF_MAP_KEY, "");
         final String ak = savedKey == null ? "" : savedKey.trim();
         double[] latLng = MapUtils.bd2wgs(lng, lat);
@@ -1139,7 +1142,7 @@ public class MainActivity extends BaseActivity implements SensorEventListener {
                 XLog.e("HTTP: HTTP GET FAILED");
                 //插表参数
                 ContentValues contentValues = new ContentValues();
-                contentValues.put(DataBaseHistoryLocation.DB_COLUMN_LOCATION, mMarkName);
+                contentValues.put(DataBaseHistoryLocation.DB_COLUMN_LOCATION, requestMarkName);
                 contentValues.put(DataBaseHistoryLocation.DB_COLUMN_LONGITUDE_WGS84, String.valueOf(latLng[0]));
                 contentValues.put(DataBaseHistoryLocation.DB_COLUMN_LATITUDE_WGS84, String.valueOf(latLng[1]));
                 contentValues.put(DataBaseHistoryLocation.DB_COLUMN_TIMESTAMP, System.currentTimeMillis() / 1000);
@@ -1170,7 +1173,7 @@ public class MainActivity extends BaseActivity implements SensorEventListener {
                             DataBaseHistoryLocation.saveHistoryLocation(mLocationHistoryDB, contentValues);
                         } else {
                             ContentValues contentValues = new ContentValues();
-                            contentValues.put(DataBaseHistoryLocation.DB_COLUMN_LOCATION, mMarkName == null ? getRetJson.getString("message"): mMarkName);
+                            contentValues.put(DataBaseHistoryLocation.DB_COLUMN_LOCATION, requestMarkName == null ? getRetJson.getString("message"): requestMarkName);
                             contentValues.put(DataBaseHistoryLocation.DB_COLUMN_LONGITUDE_WGS84, String.valueOf(latLng[0]));
                             contentValues.put(DataBaseHistoryLocation.DB_COLUMN_LATITUDE_WGS84, String.valueOf(latLng[1]));
                             contentValues.put(DataBaseHistoryLocation.DB_COLUMN_TIMESTAMP, System.currentTimeMillis() / 1000);
@@ -1181,7 +1184,7 @@ public class MainActivity extends BaseActivity implements SensorEventListener {
                     } catch (JSONException e) {
                         XLog.e("JSON: resolve json error");
                         ContentValues contentValues = new ContentValues();
-                        contentValues.put(DataBaseHistoryLocation.DB_COLUMN_LOCATION, mMarkName == null ? getResources().getString(R.string.history_location_default_name) : mMarkName);
+                        contentValues.put(DataBaseHistoryLocation.DB_COLUMN_LOCATION, requestMarkName == null ? getResources().getString(R.string.history_location_default_name) : requestMarkName);
                         contentValues.put(DataBaseHistoryLocation.DB_COLUMN_LONGITUDE_WGS84, String.valueOf(latLng[0]));
                         contentValues.put(DataBaseHistoryLocation.DB_COLUMN_LATITUDE_WGS84, String.valueOf(latLng[1]));
                         contentValues.put(DataBaseHistoryLocation.DB_COLUMN_TIMESTAMP, System.currentTimeMillis() / 1000);
