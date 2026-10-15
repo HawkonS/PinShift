@@ -13,7 +13,7 @@
         android:layout_marginEnd="8dp"
         android:autofillHints="longitude"
         android:hint="@string/label_longitude"
-        android:inputType="numberDecimal"
+        android:inputType="numberDecimal|numberSigned"
         android:digits="-0123456789."
         android:minHeight="48dp" />
 
@@ -25,7 +25,7 @@
         android:layout_marginEnd="8dp"
         android:autofillHints="latitude"
         android:hint="@string/label_latitude"
-        android:inputType="numberDecimal"
+        android:inputType="numberDecimal|numberSigned"
         android:digits="-0123456789."
         android:minHeight="48dp" />
 

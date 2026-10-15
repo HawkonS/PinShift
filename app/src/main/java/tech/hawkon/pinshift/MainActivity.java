@@ -87,6 +87,7 @@ import tech.hawkon.pinshift.database.DataBaseHistoryLocation;
 import tech.hawkon.pinshift.database.DataBaseHistorySearch;
 import tech.hawkon.pinshift.utils.ShareUtils;
 import tech.hawkon.pinshift.utils.GoUtils;
+import tech.hawkon.pinshift.utils.CoordinateParser;
 import tech.hawkon.pinshift.utils.NumericSettings;
 import tech.hawkon.pinshift.utils.MapUtils;
 
@@ -801,38 +802,39 @@ public class MainActivity extends BaseActivity implements SensorEventListener {
 
             Button btnGo = view.findViewById(R.id.input_position_ok);
             btnGo.setOnClickListener(v2 -> {
-                String dialog_lng_str = dialog_lng.getText().toString();
-                String dialog_lat_str = dialog_lat.getText().toString();
+                String dialog_lng_str = dialog_lng.getText().toString().trim();
+                String dialog_lat_str = dialog_lat.getText().toString().trim();
 
                 if (TextUtils.isEmpty(dialog_lng_str) || TextUtils.isEmpty(dialog_lat_str)) {
                     GoUtils.DisplayToast(MainActivity.this,getResources().getString(R.string.app_error_input));
-                } else {
-                    double dialog_lng_double = Double.parseDouble(dialog_lng_str);
-                    double dialog_lat_double = Double.parseDouble(dialog_lat_str);
-
-                    if (dialog_lng_double > 180.0 || dialog_lng_double < -180.0) {
-                        GoUtils.DisplayToast(MainActivity.this,  getResources().getString(R.string.app_error_longitude));
-                    } else {
-                        if (dialog_lat_double > 90.0 || dialog_lat_double < -90.0) {
-                            GoUtils.DisplayToast(MainActivity.this,  getResources().getString(R.string.app_error_latitude));
-                        } else {
-                            if (rbBD.isChecked()) {
-                                mMarkLatLngMap = new LatLng(dialog_lat_double, dialog_lng_double);
-                            } else {
-                                double[] bdLonLat = MapUtils.wgs2bd09(dialog_lat_double, dialog_lng_double);
-                                mMarkLatLngMap = new LatLng(bdLonLat[1], bdLonLat[0]);
-                            }
-                            mMarkName = "手动输入的坐标";
-
-                            markMap();
-
-                            MapStatusUpdate mapstatusupdate = MapStatusUpdateFactory.newLatLng(mMarkLatLngMap);
-                            mBaiduMap.setMapStatus(mapstatusupdate);
-
-                            dialog.dismiss();
-                        }
-                    }
+                    return;
                 }
+
+                Double longitude = CoordinateParser.parseLongitude(dialog_lng_str);
+                if (longitude == null) {
+                    GoUtils.DisplayToast(MainActivity.this, getString(R.string.app_error_longitude));
+                    return;
+                }
+                Double latitude = CoordinateParser.parseLatitude(dialog_lat_str);
+                if (latitude == null) {
+                    GoUtils.DisplayToast(MainActivity.this, getString(R.string.app_error_latitude));
+                    return;
+                }
+
+                if (rbBD.isChecked()) {
+                    mMarkLatLngMap = new LatLng(latitude, longitude);
+                } else {
+                    double[] bdLonLat = MapUtils.wgs2bd09(latitude, longitude);
+                    mMarkLatLngMap = new LatLng(bdLonLat[1], bdLonLat[0]);
+                }
+                mMarkName = "手动输入的坐标";
+
+                markMap();
+
+                MapStatusUpdate mapstatusupdate = MapStatusUpdateFactory.newLatLng(mMarkLatLngMap);
+                mBaiduMap.setMapStatus(mapstatusupdate);
+
+                dialog.dismiss();
             });
 
             Button btnCancel = view.findViewById(R.id.input_position_cancel);
