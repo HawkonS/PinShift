@@ -209,6 +209,7 @@ public class MainActivity extends BaseActivity implements SensorEventListener {
             @Override
             public void onServiceConnected(ComponentName name, IBinder service) {
                 if (!isServiceBindRequested) {
+                    unbindGoService(this);
                     return;
                 }
                 mServiceBinder = (ServiceGo.ServiceGoBinder)service;
@@ -236,7 +237,7 @@ public class MainActivity extends BaseActivity implements SensorEventListener {
             public void onServiceDisconnected(ComponentName name) {
                 mServiceBinder = null;
                 isServiceBound = false;
-                isServiceBindRequested = false;
+                // A disconnected service still has a registered binding until unbound.
                 isMockServStart = false;
                 isMockServStarting = false;
                 if (mButtonStart != null) {
@@ -928,16 +929,23 @@ public class MainActivity extends BaseActivity implements SensorEventListener {
         XLog.d("startForegroundService: ServiceGo");
     }
 
-    private void stopGoLocation() {
-        if (isServiceBound) {
-            try {
-                unbindService(mConnection);
-            } catch (IllegalArgumentException e) {
-                XLog.w("unbindService failed: " + e.getClass().getSimpleName());
-            }
-            isServiceBound = false;
+    private void unbindGoService(ServiceConnection connection) {
+        try {
+            unbindService(connection);
+        } catch (IllegalArgumentException e) {
+            // A late callback may arrive after the binding was already released.
+            XLog.w("unbindService failed: " + e.getClass().getSimpleName());
         }
+    }
+
+    private void stopGoLocation() {
+        boolean shouldUnbind = isServiceBound || isServiceBindRequested;
+        // Invalidate callbacks before releasing even a not-yet-connected binding.
         isServiceBindRequested = false;
+        isServiceBound = false;
+        if (shouldUnbind) {
+            unbindGoService(mConnection);
+        }
         mServiceBinder = null;
         Intent serviceGoIntent = new Intent(MainActivity.this, ServiceGo.class);
         stopService(serviceGoIntent);
