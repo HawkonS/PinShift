@@ -34,45 +34,54 @@ Before opening an issue, check whether it has already been reported. Include the
 
 ## Commit messages
 
-Follow [Conventional Commits](https://www.conventionalcommits.org/) using the project rules below:
+Use [Conventional Commits](https://www.conventionalcommits.org/) for every commit message and pull request title:
 
 ```text
-type(scope): description
+type(scope): summary
 ```
 
-- Write the complete title in English. Keep the type, scope, and description lowercase; start the description with a short imperative verb such as `add`, `fix`, `remove`, `update`, or `document`.
-- Always include a scope identifying the affected area. Prefer one of the project scopes listed below. Use another short, lowercase scope only when the change belongs to a distinct area not covered by them.
-- Separate the type and scope with parentheses, then write a colon and one space before the description: `type(scope): description`.
-- Keep the title on exactly one line, with no body, period, or emoji. Use a single `-m` when committing; do not add a second `-m` for a body.
-- Aim to keep the complete title within 72 characters. Describe the actual change and its purpose; avoid vague descriptions such as `update code` or `fix bug`.
-- Keep each commit focused on one logical change. Split unrelated fixes, features, tests, and refactors into separate commits.
-- For an incompatible change, place `!` after the scope and before the colon, for example `feat(app)!: change location permission handling`.
-- When using squash merges, format the pull request title as a commit title too. The pull request description should still explain the context, implementation, and verification.
+- **English is required** for the entire title, including the scope and summary.
+- **A scope is required**. Start it with a lowercase English letter and use only lowercase English letters, digits, and hyphens.
+- **The entire commit message must be a single title line**. Do not add a body, footers, trailers, or a second `-m` argument.
+- **The complete title must be 72 characters or fewer**, including the type, scope, spaces, and punctuation.
+- Keep the type and scope lowercase. Start the summary with a lowercase imperative verb, such as `add`, `fix`, `remove`, `update`, or `document`.
+- Proper names and technical identifiers in the summary may retain their original capitalization, such as `Android`, `GitHub`, `SDK`, and `JAVA_HOME`.
+- Do not end the title with a period or whitespace, and do not use emoji.
+- Keep each commit focused on one logical change. Describe the actual change; avoid vague summaries such as `update code` or `fix bug`.
+- For an incompatible change, put `!` after the scope and before the colon: `type(scope)!: summary`.
+- Put context, issue references, validation details, and migration notes in the pull request description.
+- Apply the same rules to pull request titles and final squash-merge commit messages. When squash-merging, keep only the title and remove any automatically generated body or trailers.
 
-Common types:
+Use one of these types:
 
 | Type | Use for |
 | --- | --- |
-| `feat` | A user-visible feature |
-| `fix` | A defect or compatibility fix |
+| `feat` | New user-visible functionality |
+| `fix` | Bug, regression, or compatibility fixes |
 | `refactor` | Code restructuring without behavior changes |
-| `perf` | A performance improvement |
+| `ui` | Visual styling or interaction adjustments |
+| `perf` | Performance improvements |
 | `docs` | Documentation changes |
 | `test` | Test additions or updates |
-| `build` | Dependencies, packaging, or build configuration |
+| `build` | Build configuration, dependencies, tooling, or packaging |
 | `ci` | CI workflows and automation |
-| `chore` | Maintenance that does not fit another type |
+| `chore` | Maintenance that fits no other type |
+| `revert` | Reverting an earlier commit |
 
-Common scopes:
+Use `feat` for new functionality and `fix` for defects, including changes to the UI. Use `ui` for other visual or interaction adjustments.
 
-| Scope | Use for |
+Preferred scopes:
+
+| Scope | Area |
 | --- | --- |
 | `app` | Application behavior, UI, location services, and history |
-| `android` | Android platform compatibility, manifest, and native SDK integration |
-| `build` | Gradle and local build configuration |
-| `ci` | GitHub Actions workflows |
-| `docs` | README and documentation under `docs/` |
-| `repo` | Repository-level configuration and collaboration guidelines |
+| `android` | Android compatibility, manifest, and native SDK integration |
+| `build` | Build configuration, dependencies, tooling, and packaging |
+| `ci` | CI workflows and automation |
+| `docs` | README files and project documentation |
+| `repo` | Repository-level configuration and contribution guidelines |
+
+Prefer the scopes listed above. Use another concise scope only for a distinct area not covered by them, and keep it consistent. Tests should normally use the scope of the code they cover.
 
 Examples:
 
@@ -81,6 +90,7 @@ feat(app): add manual coordinate entry
 fix(android): update Baidu SDK for 16 KB page alignment
 test(app): cover coordinate parsing edge cases
 docs(repo): document open-source contribution workflow
+feat(app)!: change the location history format
 ```
 
 ## License
