@@ -22,16 +22,6 @@ bash ./gradlew --no-daemon --no-configuration-cache assembleDebug
 
 Before opening an issue, check whether it has already been reported. Include the app version, Android version and device, steps to reproduce, and the expected and actual results. Remove credentials, personal information, and unrelated log data before sharing logs. For security issues, use GitHub's private vulnerability reporting feature when available instead of posting exploit details publicly.
 
-## Pull requests
-
-- Keep each pull request focused on one problem or improvement and target the `main` branch.
-- Explain the problem and the change, link a related issue when there is one, and complete the repository pull request template.
-- Add or update tests when behavior changes. Include a screenshot for user-visible interface changes.
-- Update user-facing documentation when behavior or configuration changes.
-- Do not include map credentials, signing keys, passwords, `local.properties`, generated APKs, logs, or other private runtime data.
-- Identify new dependencies and third-party code clearly, and make sure their licenses and distribution terms are compatible with the project.
-- Run the checks listed under Development and report any that you could not run.
-
 ## Commit messages
 
 Use [Conventional Commits](https://www.conventionalcommits.org/) for every commit message and pull request title:
@@ -92,6 +82,16 @@ test(app): cover coordinate parsing edge cases
 docs(repo): document open-source contribution workflow
 feat(app)!: change the location history format
 ```
+
+## Pull requests
+
+- Keep each pull request focused on one problem or improvement and target the `main` branch.
+- Explain the problem and the change, link a related issue when there is one, and complete the repository pull request template.
+- Add or update tests when behavior changes. Include a screenshot for user-visible interface changes.
+- Update user-facing documentation when behavior or configuration changes.
+- Do not include map credentials, signing keys, passwords, `local.properties`, generated APKs, logs, or other private runtime data.
+- Identify new dependencies and third-party code clearly, and make sure their licenses and distribution terms are compatible with the project.
+- Run the checks listed under Development and report any that you could not run.
 
 ## License
 
